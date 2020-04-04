@@ -36,8 +36,8 @@ class Pool {
                 SchedulableTask(Callable);
 
                 std::shared_future<void>& future();
-                Callable& callable();
-                std::promise<void>& promise();
+
+                void run();
 
             private:
                 Callable mCallable;

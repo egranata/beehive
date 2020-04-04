@@ -45,12 +45,9 @@ std::shared_future<void>& Pool::SchedulableTask::future() {
     return mFuture;
 }
 
-Pool::Callable& Pool::SchedulableTask::callable() {
-    return mCallable;
-}
-
-std::promise<void>& Pool::SchedulableTask::promise() {
-    return mPromise;
+void Pool::SchedulableTask::run() {
+    mCallable();
+    mPromise.set_value();
 }
 
 std::shared_future<void> Pool::schedule(Pool::Callable c) {

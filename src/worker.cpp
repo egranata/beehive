@@ -40,11 +40,7 @@ void Worker::WorkLoop() {
                 auto task = mParent->task();
                 if (task) {
                     mStats.run();
-                    auto& callable = task->callable();
-                    auto& promise = task->promise();
-
-                    callable();
-                    promise.set_value();
+                    task->run();
                 }
             } break;
         }
