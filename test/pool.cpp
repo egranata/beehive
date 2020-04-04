@@ -105,7 +105,7 @@ TEST(PoolTest, OneTaskRunsOnce) {
     ASSERT_EQ(true, ran);
 }
 
-TEST(PoolTest, Stats) {
+TEST(PoolTest, CounterStats) {
     Pool pool(3);
     auto f1 = pool.schedule([] ()->void {});
     auto f2 = pool.schedule([] ()->void {});
@@ -124,6 +124,28 @@ TEST(PoolTest, Stats) {
     });
     ASSERT_EQ(4, tasks);
     ASSERT_TRUE(messages >= 4);
+}
+
+TEST(PoolTest, TimeStats) {
+    Pool pool(3);
+    auto f1 = pool.schedule([] ()->void {
+        std::this_thread::sleep_for(400ms);
+    });
+    auto f2 = pool.schedule([] ()->void {});
+    auto f3 = pool.schedule([] ()->void {});
+    auto f4 = pool.schedule([] ()->void {
+        std::this_thread::sleep_for(200ms);
+    });
+    f1.wait();
+    f2.wait();
+    f3.wait();
+    f4.wait();
+    auto stats = pool.stats();
+    std::chrono::milliseconds active;
+    std::for_each(stats.begin(), stats.end(), [&active] (const auto& kv) -> void {
+        active += kv.second.active;
+    });
+    ASSERT_TRUE(active >= 400ms);
 }
 
 TEST(PoolTest, HyveOfZero) {

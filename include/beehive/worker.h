@@ -17,10 +17,12 @@ limitations under the License.
 #pragma once
 
 #include <atomic>
+#include <bits/stdint-uintn.h>
 #include <condition_variable>
 #include <mutex>
 #include <thread>
 #include <beehive/mq.h>
+#include <chrono>
 
 namespace beehive {
 class Pool;
@@ -30,6 +32,8 @@ class Worker {
         struct Stats {
             uint64_t messages;
             uint64_t runs;
+            std::chrono::milliseconds idle;
+            std::chrono::milliseconds active;
         };
 
         Worker(Pool*);
@@ -52,10 +56,14 @@ class Worker {
                 Stats load();
                 void message();
                 void run();
+                void active(std::chrono::steady_clock::time_point, std::chrono::steady_clock::time_point);
+                void idle(std::chrono::steady_clock::time_point, std::chrono::steady_clock::time_point);
 
             private:
                 std::atomic<uint64_t> mMessages{0};
                 std::atomic<uint64_t> mRuns{0};
+                std::atomic<std::chrono::milliseconds> mActive;
+                std::atomic<std::chrono::milliseconds> mIdle;
         };
 
         Pool* mParent;

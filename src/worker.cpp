@@ -27,8 +27,12 @@ Worker::Worker(Pool* parent) : mParent(parent) {
 
 void Worker::WorkLoop() {
     while(true) {
+        auto sidle = std::chrono::steady_clock::now();
         Message m = mMsgQueue.receive();
+        auto eidle = std::chrono::steady_clock::now();
+        mStats.idle(sidle, eidle);
         mStats.message();
+        auto sactive = std::chrono::steady_clock::now();
         switch (m.kind()) {
             case Message::Kind::NOP: break;
             case Message::Kind::EXIT: return;
@@ -44,7 +48,9 @@ void Worker::WorkLoop() {
                 }
             } break;
         }
-}
+        auto eactive = std::chrono::steady_clock::now();
+        mStats.active(sactive, eactive);
+    }
 }
 
 Worker::Stats Worker::stats() {
@@ -78,6 +84,8 @@ Worker::Stats Worker::AtomicStats::load() {
     Stats s;
     s.messages = mMessages.load();
     s.runs = mRuns.load();
+    s.idle = mIdle.load();
+    s.active = mActive.load();
     return s;
 }
 
@@ -87,4 +95,19 @@ void Worker::AtomicStats::message() {
 
 void Worker::AtomicStats::run() {
     mRuns.fetch_add(1);
+}
+
+void Worker::AtomicStats::active(std::chrono::steady_clock::time_point from, std::chrono::steady_clock::time_point to) {
+loop:
+    auto o = mActive.load();
+    auto n = std::chrono::duration_cast<std::chrono::milliseconds>(o + to - from);
+    bool ok = mActive.compare_exchange_weak(o, n);
+    if (!ok) goto loop;
+}
+void Worker::AtomicStats::idle(std::chrono::steady_clock::time_point from, std::chrono::steady_clock::time_point to) {
+loop:
+    auto o = mIdle.load();
+    auto n = std::chrono::duration_cast<std::chrono::milliseconds>(o + to - from);
+    bool ok = mIdle.compare_exchange_weak(o, n);
+    if (!ok) goto loop;
 }
