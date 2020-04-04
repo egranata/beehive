@@ -57,3 +57,5 @@ set_target_properties(tests PROPERTIES VERSION ${PROJECT_VERSION})
 target_include_directories(tests SYSTEM PRIVATE include)
 target_link_libraries(tests ${CMAKE_THREAD_LIBS_INIT} beehive gtest)
 gtest_discover_tests(tests)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
