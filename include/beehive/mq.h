@@ -21,10 +21,20 @@ limitations under the License.
 #include <queue>
 
 namespace beehive {
-enum class Message {
-    NOP,
-    EXIT,
-    TASK,
+class Message {
+    public:
+        enum class Kind {
+            NOP,
+            EXIT,
+            TASK,
+        };
+        Message(Kind k = Kind::NOP);
+
+        Kind kind() const;
+        bool operator==(const Message& rhs) const;
+        bool operator!=(const Message& rhs) const;
+    private:
+        Kind mKind;
 };
 
 class MessageQueue {

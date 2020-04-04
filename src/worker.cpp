@@ -29,10 +29,10 @@ void Worker::WorkLoop() {
     while(true) {
         Message m = mMsgQueue.receive();
         mStats.message();
-        switch (m) {
-            case Message::NOP: break;
-            case Message::EXIT: return;
-            case Message::TASK: {
+        switch (m.kind()) {
+            case Message::Kind::NOP: break;
+            case Message::Kind::EXIT: return;
+            case Message::Kind::TASK: {
                 auto task = mParent->task();
                 if (task) {
                     mStats.run();
@@ -65,11 +65,11 @@ Worker::~Worker() {
 }
 
 void Worker::exit() {
-    send(Message::EXIT);
+    send(Message::Kind::EXIT);
 }
 
 void Worker::task() {
-    send(Message::TASK);
+    send(Message::Kind::TASK);
 }
 
 Worker::AtomicStats::AtomicStats() = default;

@@ -22,6 +22,15 @@ limitations under the License.
 using namespace beehive;
 using namespace std::chrono_literals;
 
+TEST(Message, Equality) {
+    Message m1(Message::Kind::EXIT);
+    Message m2(Message::Kind::TASK);
+    Message m3(Message::Kind::EXIT);
+    ASSERT_EQ(m1, m3);
+    ASSERT_NE(m2, m3);
+    ASSERT_NE(m1, m2);
+}
+
 TEST(MessageQueue, Empty) {
     MessageQueue mq;
     ASSERT_TRUE(mq.empty());
@@ -30,67 +39,67 @@ TEST(MessageQueue, Empty) {
 
 TEST(MessageQueue, SendReceive) {
     MessageQueue mq;
-    mq.send(Message::EXIT);
+    mq.send(Message::Kind::EXIT);
     Message m;
     ASSERT_TRUE(mq.receive(&m));
-    ASSERT_EQ(Message::EXIT, m);
+    ASSERT_EQ(Message::Kind::EXIT, m.kind());
 }
 
 TEST(MessageQueue, ReceiveNull) {
     MessageQueue mq;
-    mq.send(Message::EXIT);
+    mq.send(Message::Kind::EXIT);
     ASSERT_TRUE(mq.receive(nullptr));
 }
 
 TEST(MessageQueue, ReceiveWhatYouSend) {
     MessageQueue mq;
-    mq.send(Message::EXIT);
+    mq.send(Message::Kind::EXIT);
     ASSERT_TRUE(mq.receive(nullptr));
     ASSERT_FALSE(mq.receive(nullptr));
 }
 
 TEST(MessageQueue, ReceiveInOrder) {
     MessageQueue mq;
-    mq.send(Message::EXIT);
-    mq.send(Message::TASK);
+    mq.send(Message::Kind::EXIT);
+    mq.send(Message::Kind::TASK);
     Message m;
     ASSERT_TRUE(mq.receive(&m));
-    ASSERT_EQ(Message::EXIT, m);
+    ASSERT_EQ(Message::Kind::EXIT, m.kind());
     ASSERT_TRUE(mq.receive(&m));
-    ASSERT_EQ(Message::TASK, m);
+    ASSERT_EQ(Message::Kind::TASK, m.kind());
 }
 
 TEST(SignalingQueue, SendReceive) {
     SignalingQueue sq;
-    Message m = Message::NOP;
+    Message m = Message::Kind::NOP;
     std::thread t1([&sq] () -> void {
         std::this_thread::sleep_for(500ms);
-        sq.send(Message::TASK);
+        sq.send(Message::Kind::TASK);
     });
     std::thread t2([&sq, &m] () -> void {
         m = sq.receive();
     });
     t2.join();
-    ASSERT_EQ(Message::TASK, m);
+    ASSERT_EQ(Message::Kind::TASK, m.kind());
     t1.join();
 }
 
 TEST(SignalingQueue, ReceiveTwo) {
     SignalingQueue sq;
-    Message m1 = Message::NOP;
-    Message m2 = Message::NOP;
+    Message m1 = Message::Kind::NOP;
+    Message m2 = Message::Kind::NOP;
     std::thread t1([&sq] () -> void {
         std::this_thread::sleep_for(500ms);
-        sq.send(Message::TASK);
+        sq.send(Message::Kind::TASK);
         std::this_thread::sleep_for(500ms);
-        sq.send(Message::EXIT);
+        sq.send(Message::Kind::EXIT);
     });
     std::thread t2([&sq, &m1, &m2] () -> void {
         m1 = sq.receive();
         m2 = sq.receive();
     });
     t2.join();
-    ASSERT_EQ(Message::TASK, m1);
-    ASSERT_EQ(Message::EXIT, m2);
+    ASSERT_EQ(Message::Kind::TASK, m1.kind());
+    ASSERT_EQ(Message::Kind::EXIT, m2.kind());
     t1.join();
 }

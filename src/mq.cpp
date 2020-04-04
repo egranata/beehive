@@ -18,6 +18,20 @@ limitations under the License.
 
 using namespace beehive;
 
+Message::Message(Kind k) : mKind(k) {}
+
+Message::Kind Message::kind() const {
+    return mKind;
+}
+
+bool Message::operator==(const Message& rhs) const {
+    return kind() == rhs.kind();
+}
+
+bool Message::operator!=(const Message& rhs) const {
+    return !(*this == rhs);
+}
+
 MessageQueue::MessageQueue() = default;
 
 void MessageQueue::send(Message m) {
