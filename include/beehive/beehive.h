@@ -59,6 +59,10 @@ class Beehive {
             return mPool.stats();
         }
 
+        void dump() {
+            mPool.dump();
+        }
+
     private:
         Pool mPool;
 };

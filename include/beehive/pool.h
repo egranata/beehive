@@ -56,6 +56,8 @@ class Pool {
 
         std::unordered_map<std::thread::id, Worker::Stats> stats();
 
+        void dump();
+
     private:
         Worker* at(size_t) const;
 

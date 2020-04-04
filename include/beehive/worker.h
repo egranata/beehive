@@ -43,6 +43,7 @@ class Worker {
 
         void exit();
         void task();
+        void dump();
 
         Stats stats();
         std::thread::id tid();

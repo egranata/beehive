@@ -152,3 +152,25 @@ TEST(PoolTest, HyveOfZero) {
     Pool pool;
     ASSERT_TRUE(pool.size() > 0);
 }
+
+TEST(PoolTest, Dump) {
+    Pool pool(3);
+    std::this_thread::sleep_for(300ms);
+    auto f1 = pool.schedule([] ()->void {
+        std::this_thread::sleep_for(100ms);
+    });
+    auto f2 = pool.schedule([] ()->void {
+        std::this_thread::sleep_for(25ms);
+    });
+    auto f3 = pool.schedule([] ()->void {
+        std::this_thread::sleep_for(150ms);
+    });
+    auto f4 = pool.schedule([] ()->void {
+        std::this_thread::sleep_for(250ms);
+    });
+    f1.wait();
+    f2.wait();
+    f3.wait();
+    f4.wait();
+    pool.dump();
+}

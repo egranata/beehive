@@ -27,6 +27,7 @@ class Message {
             NOP,
             EXIT,
             TASK,
+            DUMP,
         };
         Message(Kind k = Kind::NOP);
 

@@ -82,3 +82,9 @@ std::shared_ptr<Pool::SchedulableTask> Pool::task() {
     mTasks.pop();
     return std::move(tk);
 }
+
+void Pool::dump() {
+    std::for_each(mWorkers.begin(), mWorkers.end(), [] (std::unique_ptr<Worker>& wb) -> void {
+        wb->dump();
+    });
+}

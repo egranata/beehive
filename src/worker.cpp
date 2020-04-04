@@ -14,8 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#include <beehive/mq.h>
 #include <beehive/worker.h>
 #include <beehive/pool.h>
+#include <iostream>
 
 using namespace beehive;
 
@@ -24,6 +26,8 @@ Worker::Worker(Pool* parent) : mParent(parent) {
         this->WorkLoop();
     });
 }
+
+static std::mutex gDumpMutex;
 
 void Worker::WorkLoop() {
     while(true) {
@@ -42,6 +46,15 @@ void Worker::WorkLoop() {
                     mStats.run();
                     task->run();
                 }
+            } break;
+            case Message::Kind::DUMP: {
+                auto s = stats();
+                std::unique_lock<std::mutex> lk(gDumpMutex);
+                std::cerr << "Thread: " << std::this_thread::get_id() << std::endl;
+                std::cerr << "Number of tasks ran: " << s.runs << std::endl;
+                std::cerr << "Number of messages processed: " << s.messages << std::endl;
+                std::cerr << "Time active: " << s.active.count() << " milliseconds" << std::endl;
+                std::cerr << "Time idle: " << s.idle.count() << " milliseconds" << std::endl;
             } break;
         }
         auto eactive = std::chrono::steady_clock::now();
@@ -72,6 +85,10 @@ void Worker::exit() {
 
 void Worker::task() {
     send(Message::Kind::TASK);
+}
+
+void Worker::dump() {
+    send(Message::Kind::DUMP);
 }
 
 Worker::AtomicStats::AtomicStats() = default;
