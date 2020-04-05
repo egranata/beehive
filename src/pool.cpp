@@ -37,23 +37,10 @@ size_t Pool::size() const {
     return mWorkers.size();
 }
 
-Pool::SchedulableTask::SchedulableTask(Callable c) : mCallable(c), mPromise() {
-    mFuture = mPromise.get_future();
-}
-
-std::shared_future<void>& Pool::SchedulableTask::future() {
-    return mFuture;
-}
-
-void Pool::SchedulableTask::run() {
-    mCallable();
-    mPromise.set_value();
-}
-
-std::shared_future<void> Pool::schedule(Pool::Callable c) {
+std::shared_future<void> Pool::schedule(Task::Callable c) {
     std::unique_lock<std::mutex> lk(mTasksMutex);
 
-    mTasks.push(std::make_shared<SchedulableTask>(c));
+    mTasks.push(std::make_shared<Task>(c));
     std::for_each(mWorkers.begin(), mWorkers.end(), [] (std::unique_ptr<Worker>& wb) -> void {
         wb->task();
     });
@@ -74,13 +61,13 @@ bool Pool::idle() const {
     return mTasks.empty();
 }
 
-std::shared_ptr<Pool::SchedulableTask> Pool::task() {
+std::shared_ptr<Task> Pool::task() {
     std::unique_lock<std::mutex> lk(mTasksMutex);
 
     if (mTasks.empty()) return nullptr;
-    std::shared_ptr<SchedulableTask> tk = mTasks.front();
+    auto task = mTasks.front();
     mTasks.pop();
-    return std::move(tk);
+    return std::move(task);
 }
 
 void Pool::dump() {

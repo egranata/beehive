@@ -17,42 +17,26 @@ limitations under the License.
 #pragma once
 
 #include <stddef.h>
+#include <beehive/task.h>
 #include <beehive/worker.h>
 #include <memory>
 #include <vector>
 #include <stack>
 #include <queue>
 #include <mutex>
-#include <future>
 #include <unordered_map>
 
 namespace beehive {
 class Pool {
     public:
-        using Callable = std::function<void()>;
-
-        class SchedulableTask {
-            public:
-                SchedulableTask(Callable);
-
-                std::shared_future<void>& future();
-
-                void run();
-
-            private:
-                Callable mCallable;
-                std::promise<void> mPromise;
-                std::shared_future<void> mFuture;
-        };
-
         Pool(size_t = 0);
         ~Pool();
 
         size_t size() const;
-        std::shared_future<void> schedule(Callable);
+        std::shared_future<void> schedule(Task::Callable);
 
         bool idle() const;
-        std::shared_ptr<SchedulableTask> task();
+        std::shared_ptr<Task> task();
 
         std::unordered_map<std::thread::id, Worker::Stats> stats();
 
@@ -64,6 +48,6 @@ class Pool {
         std::vector<std::unique_ptr<Worker>> mWorkers;
 
         mutable std::mutex mTasksMutex;
-        std::queue<std::shared_ptr<SchedulableTask>> mTasks;
+        std::queue<std::shared_ptr<Task>> mTasks;
 };
 }
