@@ -23,6 +23,7 @@ limitations under the License.
 #include <thread>
 #include <beehive/mq.h>
 #include <chrono>
+#include <string>
 
 namespace beehive {
 class Pool;
@@ -36,7 +37,7 @@ class Worker {
             std::chrono::milliseconds active;
         };
 
-        Worker(Pool*);
+        Worker(Pool*, int);
         ~Worker();
 
         void send(Message);
@@ -44,6 +45,10 @@ class Worker {
         void exit();
         void task();
         void dump();
+
+        const char* name() const;
+        void name(const char*);
+        int id() const;
 
         Stats stats();
         std::thread::id tid();
@@ -68,6 +73,8 @@ class Worker {
         };
 
         Pool* mParent;
+        int mId;
+        std::string mName;
 
         std::thread mWorkThread;
         SignalingQueue mMsgQueue;

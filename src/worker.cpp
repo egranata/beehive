@@ -18,10 +18,12 @@ limitations under the License.
 #include <beehive/worker.h>
 #include <beehive/pool.h>
 #include <iostream>
+#include <sstream>
 
 using namespace beehive;
 
-Worker::Worker(Pool* parent) : mParent(parent) {
+Worker::Worker(Pool* parent, int id) : mParent(parent), mId(id) {
+    name(nullptr);
     mWorkThread = std::thread([this] {
         this->WorkLoop();
     });
@@ -50,7 +52,7 @@ void Worker::WorkLoop() {
             case Message::Kind::DUMP: {
                 auto s = stats();
                 std::unique_lock<std::mutex> lk(gDumpMutex);
-                std::cerr << "Thread: " << std::this_thread::get_id() << std::endl;
+                std::cerr << "Thread: " << name() << std::endl;
                 std::cerr << "Number of tasks ran: " << s.runs << std::endl;
                 std::cerr << "Number of messages processed: " << s.messages << std::endl;
                 std::cerr << "Time active: " << s.active.count() << " milliseconds" << std::endl;
@@ -64,6 +66,24 @@ void Worker::WorkLoop() {
 
 Worker::Stats Worker::stats() {
     return mStats.load();
+}
+
+const char* Worker::name() const {
+    return mName.c_str();
+}
+
+void Worker::name(const char* n) {
+    if (n && n[0]) {
+        mName.assign(n);
+    } else {
+        std::stringstream ss;
+        ss << "worker[" << mId << "]";
+        mName = ss.str();
+    }
+}
+
+int Worker::id() const {
+    return mId;
 }
 
 std::thread::id Worker::tid() {

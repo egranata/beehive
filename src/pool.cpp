@@ -21,8 +21,8 @@ using namespace beehive;
 
 Pool::Pool(size_t num) {
     if (num == 0) num = std::thread::hardware_concurrency();
-    for(size_t i = 0; i < num; ++i) {
-        mWorkers.emplace_back(std::make_unique<Worker>(this));
+    for(int i = 0; i < num; ++i) {
+        mWorkers.emplace_back(std::make_unique<Worker>(this, i));
     }
 }
 
