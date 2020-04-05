@@ -48,19 +48,8 @@ class Beehive {
             return pollen;
         }
 
-        size_t size() const {
-            return mPool.size();
-        }
-        bool idle() const {
-            return mPool.idle();
-        }
-
-        std::unordered_map<std::thread::id, Worker::Stats> stats() {
-            return mPool.stats();
-        }
-
-        void dump() {
-            mPool.dump();
+        Pool* operator->() {
+            return &mPool;
         }
 
     private:

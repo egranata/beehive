@@ -78,7 +78,7 @@ TEST(HyveTest, Metrics) {
         auto f = beehive.schedule([] () -> void {});
         f.wait();
     }
-    auto stats = beehive.stats();
+    auto stats = beehive->stats();
     uint64_t messages = 0;
     uint64_t tasks = 0;
     std::for_each(stats.begin(), stats.end(), [&messages, &tasks] (const auto& kv) -> void {
