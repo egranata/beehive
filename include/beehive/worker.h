@@ -35,6 +35,29 @@ class Worker {
             uint64_t runs;
             std::chrono::milliseconds idle;
             std::chrono::milliseconds active;
+
+            bool operator==(const Stats&) const;
+            bool operator!=(const Stats&) const;
+        };
+
+        class View {
+            public:
+                const char* name() const;
+                void name(const char*);
+                int id() const;
+                std::thread::id tid();
+                std::thread::native_handle_type nativeid();
+                Worker::Stats stats();
+
+                explicit operator bool() const;
+
+                static View empty();
+
+            private:
+                friend class Worker;
+                View(Worker*);
+
+                Worker* mWorker;
         };
 
         Worker(Pool*, int);
@@ -46,15 +69,20 @@ class Worker {
         void task();
         void dump();
 
+        View view();
+
         const char* name() const;
         void name(const char*);
         int id() const;
 
         Stats stats();
         std::thread::id tid();
+        std::thread::native_handle_type nativeid();
 
         Worker(Worker&&) = default;
     private:
+        friend class Worker::View;
+
         class AtomicStats {
             public:
                 AtomicStats();

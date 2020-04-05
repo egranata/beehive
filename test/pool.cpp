@@ -119,8 +119,8 @@ TEST(PoolTest, CounterStats) {
     uint64_t messages = 0;
     uint64_t tasks = 0;
     std::for_each(stats.begin(), stats.end(), [&messages, &tasks] (const auto& kv) -> void {
-        messages += kv.second.messages;
-        tasks += kv.second.runs;
+        messages += kv.messages;
+        tasks += kv.runs;
     });
     ASSERT_EQ(4, tasks);
     ASSERT_TRUE(messages >= 4);
@@ -143,7 +143,7 @@ TEST(PoolTest, TimeStats) {
     auto stats = pool.stats();
     std::chrono::milliseconds active;
     std::for_each(stats.begin(), stats.end(), [&active] (const auto& kv) -> void {
-        active += kv.second.active;
+        active += kv.active;
     });
     ASSERT_TRUE(active >= 400ms);
 }
@@ -173,4 +173,48 @@ TEST(PoolTest, Dump) {
     f3.wait();
     f4.wait();
     pool.dump();
+}
+
+TEST(Pool, WorkerViewId) {
+    Pool pool(3);
+    ASSERT_EQ(0, pool.worker(0).id());
+    ASSERT_EQ(1, pool.worker(1).id());
+    ASSERT_EQ(2, pool.worker(2).id());
+
+    ASSERT_FALSE(pool.worker(10));
+}
+
+TEST(Pool, WorkerName) {
+    Pool pool(3);
+    pool.worker(1).name("test_worker");
+
+    ASSERT_STREQ("test_worker", pool.worker(1).name());
+    ASSERT_STREQ("worker[0]", pool.worker(0).name());
+    ASSERT_STREQ("worker[2]", pool.worker(2).name());
+}
+
+TEST(Pool, WorkerStats) {
+    Pool pool(3);
+    std::this_thread::sleep_for(300ms);
+    auto f1 = pool.schedule([] ()->void {
+        std::this_thread::sleep_for(100ms);
+    });
+    auto f2 = pool.schedule([] ()->void {
+        std::this_thread::sleep_for(25ms);
+    });
+    auto f3 = pool.schedule([] ()->void {
+        std::this_thread::sleep_for(150ms);
+    });
+    auto f4 = pool.schedule([] ()->void {
+        std::this_thread::sleep_for(250ms);
+    });
+    f1.wait();
+    f2.wait();
+    f3.wait();
+    f4.wait();
+
+    auto stats = pool.stats();
+    ASSERT_EQ(stats.at(0), pool.worker(0).stats());
+    ASSERT_EQ(stats.at(1), pool.worker(1).stats());
+    ASSERT_EQ(stats.at(2), pool.worker(2).stats());
 }

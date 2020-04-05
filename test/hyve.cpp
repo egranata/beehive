@@ -82,8 +82,8 @@ TEST(HyveTest, Metrics) {
     uint64_t messages = 0;
     uint64_t tasks = 0;
     std::for_each(stats.begin(), stats.end(), [&messages, &tasks] (const auto& kv) -> void {
-        messages += kv.second.messages;
-        tasks += kv.second.runs;
+        messages += kv.messages;
+        tasks += kv.runs;
     });
     ASSERT_EQ(20, tasks);
     ASSERT_TRUE(messages >= 20);

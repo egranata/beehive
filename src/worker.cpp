@@ -90,6 +90,10 @@ std::thread::id Worker::tid() {
     return mWorkThread.get_id();
 }
 
+std::thread::native_handle_type Worker::nativeid() {
+    return mWorkThread.native_handle();
+}
+
 void Worker::send(Message m) {
     mMsgQueue.send(m);
 }
@@ -97,6 +101,10 @@ void Worker::send(Message m) {
 Worker::~Worker() {
     exit();
     mWorkThread.join();
+}
+
+Worker::View Worker::view() {
+    return View(this);
 }
 
 void Worker::exit() {
@@ -143,4 +151,15 @@ loop:
     auto n = std::chrono::duration_cast<std::chrono::milliseconds>(o + to - from);
     bool ok = mIdle.compare_exchange_weak(o, n);
     if (!ok) goto loop;
+}
+
+bool Worker::Stats::operator==(const Stats& rhs) const {
+    return (messages == rhs.messages) &&
+           (runs == rhs.runs) &&
+           (idle == rhs.idle) &&
+           (active == rhs.active);
+}
+
+bool Worker::Stats::operator!=(const Stats& rhs) const {
+    return !(*this == rhs);
 }

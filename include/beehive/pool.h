@@ -24,7 +24,6 @@ limitations under the License.
 #include <stack>
 #include <queue>
 #include <mutex>
-#include <unordered_map>
 
 namespace beehive {
 class Pool {
@@ -38,7 +37,8 @@ class Pool {
         bool idle() const;
         std::shared_ptr<Task> task();
 
-        std::unordered_map<std::thread::id, Worker::Stats> stats();
+        std::vector<Worker::Stats> stats();
+        Worker::View worker(int);
 
         void dump();
 

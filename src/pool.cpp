@@ -47,12 +47,20 @@ std::shared_future<void> Pool::schedule(Task::Callable c) {
     return mTasks.back()->future();
 }
 
-std::unordered_map<std::thread::id, Worker::Stats> Pool::stats() {
-    std::unordered_map<std::thread::id, Worker::Stats> map;
-    std::for_each(mWorkers.begin(), mWorkers.end(), [&map] (std::unique_ptr<Worker>& wb) -> void {
-        map.emplace(wb->tid(), wb->stats());
-    });
-    return map;
+std::vector<Worker::Stats> Pool::stats() {
+    std::vector<Worker::Stats> s;
+    for (int i = 0; i < size(); ++i) {
+        s.emplace_back(mWorkers.at(i)->stats());
+    }
+    return s;
+}
+
+Worker::View Pool::worker(int i) {
+    if (i >= 0 && i < size()) {
+        return mWorkers.at(i)->view();
+    } else {
+        return Worker::View::empty();
+    }
 }
 
 bool Pool::idle() const {
