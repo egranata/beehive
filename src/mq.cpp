@@ -73,4 +73,42 @@ loop:
     return m;
 }
 
+void SignalingQueue::loop(Handler* h) {
+    Handler::Result r = Handler::Result::CONTINUE;
+    while (r == Handler::Result::CONTINUE) {
+        auto msg = receive();
+        switch (msg.kind()) {
+            case Message::Kind::NOP: {
+                r = h->onNop();
+            } break;
+            case Message::Kind::EXIT: {
+                r = h->onExit();
+            } break;
+            case Message::Kind::DUMP: {
+                r = h->onDump();
+            } break;
+            case Message::Kind::TASK: {
+                r = h->onTask();
+            } break;
+        }
+    }
+}
 
+SignalingQueue::Handler::Handler() = default;
+SignalingQueue::Handler::~Handler() = default;
+
+SignalingQueue::Handler::Result SignalingQueue::Handler::onNop() {
+    return Result::CONTINUE;
+}
+
+SignalingQueue::Handler::Result SignalingQueue::Handler::onExit() {
+    return Result::FINISH;
+}
+
+SignalingQueue::Handler::Result SignalingQueue::Handler::onTask() {
+    return Result::CONTINUE;
+}
+
+SignalingQueue::Handler::Result SignalingQueue::Handler::onDump() {
+    return Result::CONTINUE;
+}

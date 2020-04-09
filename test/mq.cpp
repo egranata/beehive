@@ -103,3 +103,56 @@ TEST(SignalingQueue, ReceiveTwo) {
     ASSERT_EQ(Message::Kind::EXIT, m2.kind());
     t1.join();
 }
+
+TEST(SignalingQueue, Loop) {
+    class TestHandler : public SignalingQueue::Handler {
+        public:
+            using R = SignalingQueue::Handler::Result;
+            R onNop() override {
+                ++mNops;
+                return SignalingQueue::Handler::onNop();
+            }
+            R onTask() override {
+                ++mTasks;
+                return SignalingQueue::Handler::onTask();
+            }
+            R onExit() override {
+                ++mExits;
+                return SignalingQueue::Handler::onExit();
+            }
+            R onDump() override {
+                ++mDumps;
+                return SignalingQueue::Handler::onDump();
+            }
+
+            size_t nops() const { return mNops; }
+            size_t dumps() const { return mDumps; }
+            size_t exits() const { return mExits; }
+            size_t tasks() const { return mTasks; }
+
+        private:
+            size_t mNops = 0;
+            size_t mDumps = 0;
+            size_t mExits = 0;
+            size_t mTasks = 0;
+    };
+    SignalingQueue sq;
+    TestHandler th;
+    std::thread t1([&sq, &th] () -> void {
+        sq.loop(&th);
+    });
+
+    sq.send(Message::Kind::TASK);
+    sq.send(Message::Kind::TASK);
+    sq.send(Message::Kind::NOP);
+    sq.send(Message::Kind::DUMP);
+    sq.send(Message::Kind::NOP);
+    sq.send(Message::Kind::TASK);
+    sq.send(Message::Kind::EXIT);
+    t1.join();
+
+    ASSERT_EQ(3, th.tasks());
+    ASSERT_EQ(2, th.nops());
+    ASSERT_EQ(1, th.dumps());
+    ASSERT_EQ(1, th.exits());
+}

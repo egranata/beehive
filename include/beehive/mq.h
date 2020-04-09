@@ -55,11 +55,30 @@ class MessageQueue {
 
 class SignalingQueue {
     public:
+        class Handler {
+            public:
+                enum class Result {
+                    CONTINUE,
+                    ERROR,
+                    FINISH,
+                };
+
+                virtual Result onNop();
+                virtual Result onExit();
+                virtual Result onTask();
+                virtual Result onDump();
+            protected:
+                Handler();
+                virtual ~Handler();
+        };
+
         SignalingQueue();
 
         void send(Message);
         Message receive();
     
+        void loop(Handler*);
+
     private:
         MessageQueue mQueue;
         std::mutex mWaitMutex;
