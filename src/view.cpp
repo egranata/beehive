@@ -51,3 +51,11 @@ std::thread::native_handle_type Worker::View::nativeid() {
 Worker::Stats Worker::View::stats() {
     return mWorker->stats();
 }
+
+std::vector<bool> Worker::View::affinity() {
+    return mWorker->affinity();
+}
+void Worker::View::affinity(const std::vector<bool>& a) {
+    mWorker->affinity(a);
+}
+

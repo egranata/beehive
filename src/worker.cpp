@@ -17,6 +17,7 @@ limitations under the License.
 #include <beehive/mq.h>
 #include <beehive/worker.h>
 #include <beehive/pool.h>
+#include <beehive/platform.h>
 #include <iostream>
 #include <sstream>
 
@@ -117,6 +118,14 @@ void Worker::task() {
 
 void Worker::dump() {
     send(Message::Kind::DUMP);
+}
+
+std::vector<bool> Worker::affinity() {
+    return Platform::affinity(nativeid());
+}
+
+void Worker::affinity(const std::vector<bool>& a) {
+    Platform::affinity(nativeid(), a);
 }
 
 Worker::AtomicStats::AtomicStats() = default;

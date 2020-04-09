@@ -24,6 +24,7 @@ limitations under the License.
 #include <beehive/mq.h>
 #include <chrono>
 #include <string>
+#include <vector>
 
 namespace beehive {
 class Pool;
@@ -48,6 +49,8 @@ class Worker {
                 std::thread::id tid();
                 std::thread::native_handle_type nativeid();
                 Worker::Stats stats();
+                std::vector<bool> affinity();
+                void affinity(const std::vector<bool>&);
 
                 explicit operator bool() const;
 
@@ -78,6 +81,9 @@ class Worker {
         Stats stats();
         std::thread::id tid();
         std::thread::native_handle_type nativeid();
+
+        std::vector<bool> affinity();
+        void affinity(const std::vector<bool>&);
 
         Worker(Worker&&) = default;
     private:
