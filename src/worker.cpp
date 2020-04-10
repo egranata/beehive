@@ -34,12 +34,11 @@ static std::mutex gDumpMutex;
 
 void Worker::WorkLoop() {
     while(true) {
-        auto sidle = std::chrono::steady_clock::now();
+        mStats.idle().start();
         Message m = mMsgQueue.receive();
-        auto eidle = std::chrono::steady_clock::now();
-        mStats.idle(sidle, eidle);
+        mStats.idle().stop();
         mStats.message();
-        auto sactive = std::chrono::steady_clock::now();
+        mStats.active().start();
         switch (m.kind()) {
             case Message::Kind::NOP: break;
             case Message::Kind::EXIT: return;
@@ -61,7 +60,7 @@ void Worker::WorkLoop() {
             } break;
         }
         auto eactive = std::chrono::steady_clock::now();
-        mStats.active(sactive, eactive);
+        mStats.active().stop();
     }
 }
 
@@ -134,8 +133,8 @@ Worker::Stats Worker::AtomicStats::load() {
     Stats s;
     s.messages = mMessages.load();
     s.runs = mRuns.load();
-    s.idle = mIdle.load();
-    s.active = mActive.load();
+    s.idle = mIdle.value();
+    s.active = mActive.value();
     return s;
 }
 
@@ -147,19 +146,11 @@ void Worker::AtomicStats::run() {
     mRuns.fetch_add(1);
 }
 
-void Worker::AtomicStats::active(std::chrono::steady_clock::time_point from, std::chrono::steady_clock::time_point to) {
-loop:
-    auto o = mActive.load();
-    auto n = std::chrono::duration_cast<std::chrono::milliseconds>(o + to - from);
-    bool ok = mActive.compare_exchange_weak(o, n);
-    if (!ok) goto loop;
+TimeCounter& Worker::AtomicStats::active() {
+    return mActive;
 }
-void Worker::AtomicStats::idle(std::chrono::steady_clock::time_point from, std::chrono::steady_clock::time_point to) {
-loop:
-    auto o = mIdle.load();
-    auto n = std::chrono::duration_cast<std::chrono::milliseconds>(o + to - from);
-    bool ok = mIdle.compare_exchange_weak(o, n);
-    if (!ok) goto loop;
+TimeCounter& Worker::AtomicStats::idle() {
+    return mIdle;
 }
 
 bool Worker::Stats::operator==(const Stats& rhs) const {

@@ -25,6 +25,7 @@ limitations under the License.
 #include <chrono>
 #include <string>
 #include <vector>
+#include <beehive/timecounter.h>
 
 namespace beehive {
 class Pool;
@@ -96,14 +97,14 @@ class Worker {
                 Stats load();
                 void message();
                 void run();
-                void active(std::chrono::steady_clock::time_point, std::chrono::steady_clock::time_point);
-                void idle(std::chrono::steady_clock::time_point, std::chrono::steady_clock::time_point);
+                TimeCounter& active();
+                TimeCounter& idle();
 
             private:
                 std::atomic<uint64_t> mMessages{0};
                 std::atomic<uint64_t> mRuns{0};
-                std::atomic<std::chrono::milliseconds> mActive;
-                std::atomic<std::chrono::milliseconds> mIdle;
+                TimeCounter mActive;
+                TimeCounter mIdle;
         };
 
         Pool* mParent;
