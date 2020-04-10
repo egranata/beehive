@@ -108,6 +108,15 @@ TEST(SignalingQueue, Loop) {
     class TestHandler : public SignalingQueue::Handler {
         public:
             using R = SignalingQueue::Handler::Result;
+
+            void onBeforeMessage() override {
+                ++mBefores;
+            }
+
+            void onAfterMessage() override {
+                ++mAfters;
+            }
+
             R onNop() override {
                 ++mNops;
                 return SignalingQueue::Handler::onNop();
@@ -125,12 +134,18 @@ TEST(SignalingQueue, Loop) {
                 return SignalingQueue::Handler::onDump();
             }
 
+            size_t befores() const { return mBefores; }
+            size_t afters() const { return mAfters; }
+
             size_t nops() const { return mNops; }
             size_t dumps() const { return mDumps; }
             size_t exits() const { return mExits; }
             size_t tasks() const { return mTasks; }
 
         private:
+            size_t mBefores = 0;
+            size_t mAfters = 0;
+
             size_t mNops = 0;
             size_t mDumps = 0;
             size_t mExits = 0;
@@ -150,6 +165,9 @@ TEST(SignalingQueue, Loop) {
     sq.send(Message::Kind::TASK);
     sq.send(Message::Kind::EXIT);
     t1.join();
+
+    ASSERT_EQ(7, th.befores());
+    ASSERT_EQ(7, th.afters());
 
     ASSERT_EQ(3, th.tasks());
     ASSERT_EQ(2, th.nops());

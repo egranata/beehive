@@ -77,6 +77,7 @@ void SignalingQueue::loop(Handler* h) {
     Handler::Result r = Handler::Result::CONTINUE;
     while (r == Handler::Result::CONTINUE) {
         auto msg = receive();
+        h->onBeforeMessage();
         switch (msg.kind()) {
             case Message::Kind::NOP: {
                 r = h->onNop();
@@ -91,11 +92,15 @@ void SignalingQueue::loop(Handler* h) {
                 r = h->onTask();
             } break;
         }
+        h->onAfterMessage();
     }
 }
 
 SignalingQueue::Handler::Handler() = default;
 SignalingQueue::Handler::~Handler() = default;
+
+void SignalingQueue::Handler::onBeforeMessage() {}
+void SignalingQueue::Handler::onAfterMessage() {}
 
 SignalingQueue::Handler::Result SignalingQueue::Handler::onNop() {
     return Result::CONTINUE;

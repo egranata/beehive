@@ -63,6 +63,9 @@ class SignalingQueue {
                     FINISH,
                 };
 
+                virtual void onBeforeMessage();
+                virtual void onAfterMessage();
+
                 virtual Result onNop();
                 virtual Result onExit();
                 virtual Result onTask();
