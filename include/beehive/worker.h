@@ -26,11 +26,12 @@ limitations under the License.
 #include <string>
 #include <vector>
 #include <beehive/timecounter.h>
+#include <beehive/mq.h>
 
 namespace beehive {
 class Pool;
 
-class Worker {
+class Worker : public SignalingQueue::Handler {
     public:
         struct Stats {
             uint64_t messages;
@@ -87,6 +88,14 @@ class Worker {
         void affinity(const std::vector<bool>&);
 
         Worker(Worker&&) = default;
+
+        void onBeforeMessage() override;
+        void onAfterMessage() override;
+
+        Result onNop() override;
+        Result onExit() override;
+        Result onTask() override;
+        Result onDump() override;
     private:
         friend class Worker::View;
 

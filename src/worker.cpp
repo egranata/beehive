@@ -32,36 +32,45 @@ Worker::Worker(Pool* parent, int id) : mParent(parent), mId(id) {
 
 static std::mutex gDumpMutex;
 
-void Worker::WorkLoop() {
-    while(true) {
-        mStats.idle().start();
-        Message m = mMsgQueue.receive();
-        mStats.idle().stop();
-        mStats.message();
-        mStats.active().start();
-        switch (m.kind()) {
-            case Message::Kind::NOP: break;
-            case Message::Kind::EXIT: return;
-            case Message::Kind::TASK: {
-                auto task = mParent->task();
-                if (task) {
-                    mStats.run();
-                    task->run();
-                }
-            } break;
-            case Message::Kind::DUMP: {
-                auto s = stats();
-                std::unique_lock<std::mutex> lk(gDumpMutex);
-                std::cerr << "Thread: " << name() << std::endl;
-                std::cerr << "Number of tasks ran: " << s.runs << std::endl;
-                std::cerr << "Number of messages processed: " << s.messages << std::endl;
-                std::cerr << "Time active: " << s.active.count() << " milliseconds" << std::endl;
-                std::cerr << "Time idle: " << s.idle.count() << " milliseconds" << std::endl;
-            } break;
-        }
-        auto eactive = std::chrono::steady_clock::now();
-        mStats.active().stop();
+void Worker::onBeforeMessage() {
+    mStats.idle().stop();
+    mStats.active().start();
+    mStats.message();
+}
+void Worker::onAfterMessage() {
+    mStats.active().stop();
+    mStats.idle().start();
+}
+
+SignalingQueue::Handler::Result Worker::onNop() {
+    return SignalingQueue::Handler::Result::CONTINUE;
+}
+SignalingQueue::Handler::Result Worker::onExit() {
+    return SignalingQueue::Handler::Result::FINISH;
+}
+SignalingQueue::Handler::Result Worker::onTask() {
+    auto task = mParent->task();
+    if (task) {
+        mStats.run();
+        task->run();
     }
+    return SignalingQueue::Handler::Result::CONTINUE;
+}
+SignalingQueue::Handler::Result Worker::onDump() {
+    auto s = stats();
+    std::unique_lock<std::mutex> lk(gDumpMutex);
+    std::cerr << "Thread: " << name() << std::endl;
+    std::cerr << "Number of tasks ran: " << s.runs << std::endl;
+    std::cerr << "Number of messages processed: " << s.messages << std::endl;
+    std::cerr << "Time active: " << s.active.count() << " milliseconds" << std::endl;
+    std::cerr << "Time idle: " << s.idle.count() << " milliseconds" << std::endl;
+    return SignalingQueue::Handler::Result::CONTINUE;
+}
+
+
+void Worker::WorkLoop() {
+    mStats.idle().start();
+    mMsgQueue.loop(this);
 }
 
 Worker::Stats Worker::stats() {
