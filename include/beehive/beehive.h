@@ -19,8 +19,10 @@ limitations under the License.
 #include <functional>
 #include <future>
 #include <beehive/pool.h>
+#include <iterator>
 #include <memory>
 #include <type_traits>
+#include <vector>
 
 namespace beehive {
 class Beehive {
@@ -46,6 +48,45 @@ class Beehive {
             };
             mPool.schedule(task);
             return pollen;
+        }
+
+        template<typename InIter, typename Callable>
+        void foreach(InIter from, InIter to, Callable f) {
+            using In = typename std::iterator_traits<InIter>::value_type;
+            using R = std::result_of_t<Callable(In)>;
+            using Future = std::shared_future<R>;
+            std::vector<Future> futures;
+            for (; from != to; ++from) {
+                futures.push_back(schedule(f, *from));
+            }
+            for (const auto& future : futures) {
+                future.wait();
+            }
+        }
+
+        template<typename InIter, typename Callable, typename OutIter>
+        void transform(InIter from, InIter to, Callable f, OutIter dest) {
+            using In = typename std::iterator_traits<InIter>::value_type;
+            using R = std::result_of_t<Callable(In)>;
+            using Future = std::shared_future<R>;
+            using Type = std::pair<bool, Future>;
+            std::vector<Type> futures;
+            for (; from != to; ++from) {
+                futures.push_back({false, schedule(f, *from)});
+            }
+            bool more = true;
+            while(more) {
+                more = false;
+                for (auto& f : futures) {
+                    if (f.first) continue;
+                    more = true;
+                    auto ready = f.second.wait_for(std::chrono::seconds(0));
+                    if (ready == std::future_status::ready) {
+                        f.first = true;
+                        *dest++ = f.second.get();
+                    }
+                }
+            }
         }
 
         Pool* operator->() {

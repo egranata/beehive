@@ -16,10 +16,16 @@ limitations under the License.
 
 #include <beehive/beehive.h>
 #include "gtest/gtest.h"
+#include <algorithm>
+#include <iterator>
+#include <mutex>
 #include <string>
 #include <functional>
+#include <sstream>
+#include <iterator>
 
 using namespace beehive;
+using namespace std::chrono_literals;
 
 TEST(HyveTest, RunOneTask) {
     Beehive beehive;
@@ -87,4 +93,48 @@ TEST(HyveTest, Metrics) {
     });
     ASSERT_EQ(20, tasks);
     ASSERT_TRUE(messages >= 20);
+}
+
+TEST(HyveTest, ForEach) {
+    Beehive beehive;
+    std::vector<int> v0 = {1,2,3,4,5};
+    std::vector<std::string> v1;
+    std::mutex mtx;
+    auto f = [&v1, &mtx] (int x) -> void {
+        std::this_thread::sleep_for(100ms);
+        x = 2 * x;
+        std::stringstream ss;
+        ss << x;
+        {
+            std::unique_lock<std::mutex> lk(mtx);
+            v1.push_back(ss.str());
+        }
+    };
+    beehive.foreach(v0.begin(), v0.end(), f);
+    ASSERT_EQ(v0.size(), v1.size());
+
+    auto v1_beg = v1.begin();
+    auto v1_end = v1.end();
+
+    ASSERT_FALSE(std::find(v1_beg, v1_end, "2") == v1_end);
+    ASSERT_FALSE(std::find(v1_beg, v1_end, "4") == v1_end);
+    ASSERT_FALSE(std::find(v1_beg, v1_end, "6") == v1_end);
+    ASSERT_FALSE(std::find(v1_beg, v1_end, "8") == v1_end);
+    ASSERT_FALSE(std::find(v1_beg, v1_end, "10") == v1_end);
+}
+
+TEST(HyveTest, Transform) {
+    Beehive beehive;
+    std::vector<int> v0 = {1,2,3,4,5};
+    std::map<int, int> m0;
+    auto f = [] (int x) -> std::pair<int, int> {
+        std::this_thread::sleep_for(111ms);
+        return {x, x + 1};
+    };
+    beehive.transform(v0.begin(), v0.end(), f, std::inserter(m0, m0.end()));
+    ASSERT_EQ(m0.size(), v0.size());
+
+    for (const auto& kv : m0) {
+        ASSERT_EQ(kv.first + 1, kv.second);
+    }
 }
