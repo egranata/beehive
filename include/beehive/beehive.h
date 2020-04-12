@@ -37,7 +37,7 @@ class Beehive {
             using Future = std::shared_future<R>;
             auto flower = std::make_shared<Promise>();
             Future pollen = Future(flower->get_future());
-            auto task = [args = std::make_tuple(std::forward<Args>(args) ...), f, flower] () -> void {
+            auto task = [args = std::make_tuple(std::forward<Args>(args) ...), f, flower] ()mutable -> void {
                 if constexpr (std::is_same_v<R, void>) {
                     std::apply(f,args);
                     flower->set_value();

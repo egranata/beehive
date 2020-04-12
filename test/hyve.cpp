@@ -78,6 +78,17 @@ TEST(HyveTest, ScheduleVoid) {
     f.wait();
 }
 
+TEST(HyveTest, ScheduleObject) {
+    Beehive beehive;
+    struct F {
+        int operator()(const int& n) {
+            return n + 1;
+        }
+    };
+    auto f = beehive.schedule(F(), 1);
+    ASSERT_EQ(2, f.get());
+}
+
 TEST(HyveTest, Metrics) {
     Beehive beehive;
     for (size_t i = 0; i < 20; ++i) {
