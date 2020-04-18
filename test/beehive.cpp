@@ -28,7 +28,7 @@ limitations under the License.
 using namespace beehive;
 using namespace std::chrono_literals;
 
-TEST(HyveTest, RunOneTask) {
+TEST(Beehive, RunOneTask) {
     Beehive beehive;
     auto future = beehive.schedule([] (int x) -> int {
         return 2 * x + 3;
@@ -36,7 +36,7 @@ TEST(HyveTest, RunOneTask) {
     ASSERT_EQ(9, future.get());
 }
 
-TEST(HyveTest, RunTwoTasks) {
+TEST(Beehive, RunTwoTasks) {
     Beehive beehive;
     auto ifuture = beehive.schedule([] (int x) -> int {
         return 2 * x + 3;
@@ -48,7 +48,7 @@ TEST(HyveTest, RunTwoTasks) {
     ASSERT_EQ(5, sfuture.get());
 }
 
-TEST(HyveTest, RunDifferentTasks) {
+TEST(Beehive, RunDifferentTasks) {
     Beehive beehive;
     auto f1 = beehive.schedule([] (int x, int y) -> int {
         return x + y;
@@ -60,26 +60,26 @@ TEST(HyveTest, RunDifferentTasks) {
     ASSERT_EQ(6, f2.get());
 }
 
-TEST(HyveTest, ScheduleFunction) {
+TEST(Beehive, ScheduleFunction) {
     std::function<int(int)> op = [] (int x) -> int { return x; };
     Beehive beehive;
     auto f = beehive.schedule(op, 42);
     ASSERT_EQ(42, f.get());
 }
 
-TEST(HyveTest, Schedule0Arg) {
+TEST(Beehive, Schedule0Arg) {
     Beehive beehive;
     auto f = beehive.schedule([] () -> int { return 1; });
     ASSERT_EQ(1, f.get());
 }
 
-TEST(HyveTest, ScheduleVoid) {
+TEST(Beehive, ScheduleVoid) {
     Beehive beehive;
     auto f = beehive.schedule([] () -> void { });
     f.wait();
 }
 
-TEST(HyveTest, ScheduleObject) {
+TEST(Beehive, ScheduleObject) {
     Beehive beehive;
     struct F {
         int operator()(const int& n) {
@@ -90,7 +90,7 @@ TEST(HyveTest, ScheduleObject) {
     ASSERT_EQ(2, f.get());
 }
 
-TEST(HyveTest, Metrics) {
+TEST(Beehive, Metrics) {
     Beehive beehive;
     for (size_t i = 0; i < 20; ++i) {
         auto f = beehive.schedule([] () -> void {});
@@ -107,7 +107,7 @@ TEST(HyveTest, Metrics) {
     ASSERT_TRUE(messages >= 20);
 }
 
-TEST(HyveTest, ForEach) {
+TEST(Beehive, ForEach) {
     Beehive beehive;
     std::vector<int> v0 = {1,2,3,4,5};
     std::vector<std::string> v1;
@@ -135,7 +135,7 @@ TEST(HyveTest, ForEach) {
     ASSERT_FALSE(std::find(v1_beg, v1_end, "10") == v1_end);
 }
 
-TEST(HyveTest, Transform) {
+TEST(Beehive, Transform) {
     Beehive beehive;
     std::vector<int> v0 = {1,2,3,4,5};
     std::map<int, int> m0;
@@ -151,7 +151,7 @@ TEST(HyveTest, Transform) {
     }
 }
 
-TEST(HyveTest, SharedCallable) {
+TEST(Beehive, SharedCallable) {
     class Task {
         public:
             Task(int fv) : mFinalValue(fv) {}
