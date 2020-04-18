@@ -227,3 +227,19 @@ TEST(Pool, WorkerStats) {
     ASSERT_TRUE(stats.at(2).active <= w2.active);
     ASSERT_TRUE(stats.at(2).idle <= w2.idle);
 }
+
+TEST(Pool, AddWorker) {
+    Pool pool(1);
+
+    ASSERT_EQ(1, pool.size());
+
+    pool.addworker();
+    ASSERT_EQ(2, pool.size());
+
+    pool.addworker();
+    ASSERT_EQ(3, pool.size());
+
+    ASSERT_EQ("worker[0]", pool.worker(0).name());
+    ASSERT_EQ("worker[1]", pool.worker(1).name());
+    ASSERT_EQ("worker[2]", pool.worker(2).name());
+}

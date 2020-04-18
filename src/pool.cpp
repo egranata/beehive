@@ -94,3 +94,10 @@ void Pool::dump() {
         wb->dump();
     });
 }
+
+void Pool::addworker() {
+    std::unique_lock<std::recursive_mutex> lkk(mWorkersMutex);
+
+    auto i = mWorkers.size();
+    mWorkers.emplace_back(std::make_unique<Worker>(this, i));
+}

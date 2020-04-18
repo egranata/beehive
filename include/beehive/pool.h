@@ -42,6 +42,8 @@ class Pool {
 
         void dump();
 
+        void addworker();
+
     private:
         Worker* at(size_t) const;
 
