@@ -46,14 +46,13 @@ size_t Pool::size() const {
     return mWorkers.size();
 }
 
-std::shared_future<void> Pool::schedule(Task::Callable c) {
-    std::unique_lock<std::mutex> lk(mTasksMutex);
-
-    mTasks.push(std::make_shared<Task>(c));
+std::shared_future<void> Pool::schedule(Task::Callable c, Task::Priority p) {
+    auto tsk = std::make_shared<Task>(c);
+    mTasks.push(p, tsk);
     foreachworker([] (std::unique_ptr<Worker>& wb) -> void {
         wb->task();
     });
-    return mTasks.back()->future();
+    return tsk->future();
 }
 
 std::vector<Worker::Stats> Pool::stats() {
@@ -75,18 +74,12 @@ Worker::View Pool::worker(int i) {
 }
 
 bool Pool::idle() const {
-    std::unique_lock<std::mutex> lk(mTasksMutex);
-
     return mTasks.empty();
 }
 
 std::shared_ptr<Task> Pool::task() {
-    std::unique_lock<std::mutex> lk(mTasksMutex);
-
-    if (mTasks.empty()) return nullptr;
-    auto task = mTasks.front();
-    mTasks.pop();
-    return std::move(task);
+    auto tsk = mTasks.trypop();
+    return tsk.value_or(nullptr);
 }
 
 void Pool::dump() {

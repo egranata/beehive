@@ -16,10 +16,12 @@ limitations under the License.
 
 #include <beehive/pool.h>
 #include "gtest/gtest.h"
+#include <future>
 #include <stdlib.h>
 #include <thread>
 #include <chrono>
 #include <algorithm>
+#include <beehive/task.h>
 
 using namespace beehive;
 using namespace std::chrono_literals;
@@ -242,4 +244,46 @@ TEST(Pool, AddWorker) {
     ASSERT_EQ("worker[0]", pool.worker(0).name());
     ASSERT_EQ("worker[1]", pool.worker(1).name());
     ASSERT_EQ("worker[2]", pool.worker(2).name());
+}
+
+TEST(Pool, TaskPriority) {
+    using Instant = std::chrono::time_point<std::chrono::steady_clock>;
+    using Delay = std::chrono::milliseconds;
+    auto now = [] () -> Instant {
+        return std::chrono::steady_clock::now();
+    };
+
+    Instant t1_begin;
+    Instant t2_begin;
+    Instant t3_begin;
+    Instant t4_begin;
+
+    auto t1 = [&] () -> void {
+        t1_begin = now();
+        std::this_thread::sleep_for(210ms);
+    };
+    auto t2 = [&] () -> void {
+        t2_begin = now();
+        std::this_thread::sleep_for(300ms);
+    };
+    auto t3 = [&] () -> void {
+        t3_begin = now();
+        std::this_thread::sleep_for(255ms);
+    };
+    auto t4 = [&] () -> void {
+        t4_begin = now();
+        std::this_thread::sleep_for(10ms);
+    };
+
+    Pool pool(1);
+
+    pool.schedule(t1);
+    pool.schedule(t2);
+    auto f2 = pool.schedule(t4, Task::MinPriority);
+    auto f1 = pool.schedule(t3, Task::MaxPriority);
+
+    f2.wait();
+    ASSERT_EQ(f1.wait_for(0ms), std::future_status::ready);
+
+    ASSERT_TRUE(t3_begin < t4_begin);
 }

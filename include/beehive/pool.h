@@ -18,6 +18,7 @@ limitations under the License.
 
 #include <stddef.h>
 #include <beehive/task.h>
+#include <beehive/pq.h>
 #include <beehive/worker.h>
 #include <memory>
 #include <vector>
@@ -32,7 +33,7 @@ class Pool {
         ~Pool();
 
         size_t size() const;
-        std::shared_future<void> schedule(Task::Callable);
+        std::shared_future<void> schedule(Task::Callable, Task::Priority = Task::DefaultPriority);
 
         bool idle() const;
         std::shared_ptr<Task> task();
@@ -52,7 +53,6 @@ class Pool {
         mutable std::recursive_mutex mWorkersMutex;
         std::vector<std::unique_ptr<Worker>> mWorkers;
 
-        mutable std::mutex mTasksMutex;
-        std::queue<std::shared_ptr<Task>> mTasks;
+        PriorityQueue<Task::Priority, std::shared_ptr<Task>> mTasks;
 };
 }

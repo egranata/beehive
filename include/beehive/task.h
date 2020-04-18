@@ -21,6 +21,11 @@ limitations under the License.
 namespace beehive {
 class Task {
     public:
+        using Priority = uint8_t;
+        static constexpr Priority MinPriority = 0;
+        static constexpr Priority DefaultPriority = 127;
+        static constexpr Priority MaxPriority = 255;
+
         using Callable = std::function<void()>;
 
         Task(Callable);
