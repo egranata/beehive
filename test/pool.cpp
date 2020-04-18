@@ -24,17 +24,17 @@ limitations under the License.
 using namespace beehive;
 using namespace std::chrono_literals;
 
-TEST(PoolTest, Size) {
+TEST(Pool, Size) {
     Pool pool(10);
     ASSERT_EQ(10, pool.size());
 }
 
-TEST(PoolTest, Idle) {
+TEST(Pool, Idle) {
     Pool pool(1);
     ASSERT_TRUE(pool.idle());
 }
 
-TEST(PoolTest, OneTask) {
+TEST(Pool, OneTask) {
     Pool pool(1);
     int n = 0;
     auto future = pool.schedule([&n] () -> void {
@@ -44,7 +44,7 @@ TEST(PoolTest, OneTask) {
     ASSERT_EQ(1, n);
 }
 
-TEST(PoolTest, TwoTasks) {
+TEST(Pool, TwoTasks) {
     Pool pool(1);
     int n = 0;
     int m = 1;
@@ -60,7 +60,7 @@ TEST(PoolTest, TwoTasks) {
     ASSERT_EQ(3, m);
 }
 
-TEST(PoolTest, TwoParallelTasks) {
+TEST(Pool, TwoParallelTasks) {
     Pool pool(2);
     int n = 0;
     int m = 1;
@@ -76,7 +76,7 @@ TEST(PoolTest, TwoParallelTasks) {
     ASSERT_EQ(3, m);
 }
 
-TEST(PoolTest, TwoLongTasks) {
+TEST(Pool, TwoLongTasks) {
     Pool pool(2);
     int n = 0;
     int m = 1;
@@ -94,7 +94,7 @@ TEST(PoolTest, TwoLongTasks) {
     ASSERT_EQ(3, m);
 }
 
-TEST(PoolTest, OneTaskRunsOnce) {
+TEST(Pool, OneTaskRunsOnce) {
     Pool pool(2);
     bool ran = false;
     auto f1 = pool.schedule([&ran] () -> void {
@@ -105,7 +105,7 @@ TEST(PoolTest, OneTaskRunsOnce) {
     ASSERT_EQ(true, ran);
 }
 
-TEST(PoolTest, CounterStats) {
+TEST(Pool, CounterStats) {
     Pool pool(3);
     auto f1 = pool.schedule([] ()->void {});
     auto f2 = pool.schedule([] ()->void {});
@@ -126,7 +126,7 @@ TEST(PoolTest, CounterStats) {
     ASSERT_TRUE(messages >= 4);
 }
 
-TEST(PoolTest, TimeStats) {
+TEST(Pool, TimeStats) {
     Pool pool(3);
     auto f1 = pool.schedule([] ()->void {
         std::this_thread::sleep_for(400ms);
@@ -148,12 +148,12 @@ TEST(PoolTest, TimeStats) {
     ASSERT_TRUE(active >= 400ms);
 }
 
-TEST(PoolTest, HyveOfZero) {
+TEST(Pool, HyveOfZero) {
     Pool pool;
     ASSERT_TRUE(pool.size() > 0);
 }
 
-TEST(PoolTest, Dump) {
+TEST(Pool, Dump) {
     Pool pool(3);
     std::this_thread::sleep_for(300ms);
     auto f1 = pool.schedule([] ()->void {
