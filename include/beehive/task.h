@@ -17,6 +17,7 @@ limitations under the License.
 #pragma once
 
 #include <future>
+#include <memory>
 
 namespace beehive {
 class Task {
@@ -38,5 +39,22 @@ class Task {
         Callable mCallable;
         std::promise<void> mPromise;
         std::shared_future<void> mFuture;
+};
+
+template<typename C, typename Ret = void, typename... Params>
+class SharedCallable {
+    public:
+        template<typename... Args>
+        SharedCallable(Args... a) {
+            mCallable = std::make_shared<C>(std::forward<Args>(a)...);
+        }
+        Ret operator()(Params... p) {
+            return mCallable->operator()(std::forward<Params>(p)...);
+        }
+        C* operator->() {
+            return mCallable.get();
+        }
+    private:
+        std::shared_ptr<C> mCallable;
 };
 }

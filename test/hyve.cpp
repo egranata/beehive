@@ -23,6 +23,7 @@ limitations under the License.
 #include <functional>
 #include <sstream>
 #include <iterator>
+#include <beehive/task.h>
 
 using namespace beehive;
 using namespace std::chrono_literals;
@@ -148,4 +149,29 @@ TEST(HyveTest, Transform) {
     for (const auto& kv : m0) {
         ASSERT_EQ(kv.first + 1, kv.second);
     }
+}
+
+TEST(HyveTest, SharedCallable) {
+    class Task {
+        public:
+            Task(int fv) : mFinalValue(fv) {}
+            int operator()(int x, int y) {
+                mValue = mFinalValue + x + y;
+                return x - y;
+            }
+            int value() const {
+                return mValue;
+            }
+        private:
+            int mFinalValue;
+            int mValue = 0;
+    };
+
+    Beehive beehive;
+    auto shh = SharedCallable<Task, int, int, int>(123);
+
+    auto shh_f = beehive.schedule(shh, 3, 4);
+    shh_f.wait();
+    ASSERT_EQ(130, shh->value());
+    ASSERT_EQ(-1, shh_f.get());
 }

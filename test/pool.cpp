@@ -287,3 +287,26 @@ TEST(Pool, TaskPriority) {
 
     ASSERT_TRUE(t3_begin < t4_begin);
 }
+
+TEST(Pool, SharedCallable) {
+    class Task {
+        public:
+            Task(int fv) : mFinalValue(fv) {}
+            void operator()() {
+                mValue = mFinalValue;
+            }
+            int value() const {
+                return mValue;
+            }
+        private:
+            int mFinalValue;
+            int mValue = 0;
+    };
+
+    Pool pool;
+    auto shh = SharedCallable<Task>(123);
+
+    auto shh_f = pool.schedule(shh);
+    shh_f.wait();
+    ASSERT_EQ(123, shh->value());
+}
