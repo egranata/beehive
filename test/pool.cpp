@@ -214,7 +214,16 @@ TEST(Pool, WorkerStats) {
     f4.wait();
 
     auto stats = pool.stats();
-    ASSERT_EQ(stats.at(0), pool.worker(0).stats());
-    ASSERT_EQ(stats.at(1), pool.worker(1).stats());
-    ASSERT_EQ(stats.at(2), pool.worker(2).stats());
+    auto w0 = pool.worker(0).stats();
+    auto w1 = pool.worker(1).stats();
+    auto w2 = pool.worker(2).stats();
+
+    ASSERT_TRUE(stats.at(0).active <= w0.active);
+    ASSERT_TRUE(stats.at(0).idle <= w0.idle);
+
+    ASSERT_TRUE(stats.at(1).active <= w1.active);
+    ASSERT_TRUE(stats.at(1).idle <= w1.idle);
+
+    ASSERT_TRUE(stats.at(2).active <= w2.active);
+    ASSERT_TRUE(stats.at(2).idle <= w2.idle);
 }

@@ -17,6 +17,7 @@ limitations under the License.
 #include <beehive/mq.h>
 
 using namespace beehive;
+using namespace std::chrono_literals;
 
 Message::Message(Kind k) : mKind(k) {}
 
@@ -66,7 +67,7 @@ Message SignalingQueue::receive() {
 loop:
     while(mQueue.empty()) {
         std::unique_lock<std::mutex> lk(mWaitMutex);
-        mWaitCV.wait(lk);
+        mWaitCV.wait_for(lk, 100ms);
     }
     Message m;
     if (!mQueue.receive(&m)) goto loop;

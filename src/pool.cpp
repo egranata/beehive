@@ -28,12 +28,21 @@ Pool::Pool(size_t num) {
 
 Pool::~Pool() = default;
 
+void Pool::foreachworker(std::function<void(std::unique_ptr<Worker>&)> f) {
+    std::unique_lock<std::recursive_mutex> lkk(mWorkersMutex);
+    std::for_each(mWorkers.begin(), mWorkers.end(), f);
+}
+
 Worker* Pool::at(size_t i) const {
-    if (i >= size()) return nullptr;
+    std::unique_lock<std::recursive_mutex> lkk(mWorkersMutex);
+
+    if (i >= mWorkers.size()) return nullptr;
     return mWorkers.at(i).get();
 }
 
 size_t Pool::size() const {
+    std::unique_lock<std::recursive_mutex> lkk(mWorkersMutex);
+
     return mWorkers.size();
 }
 
@@ -41,7 +50,7 @@ std::shared_future<void> Pool::schedule(Task::Callable c) {
     std::unique_lock<std::mutex> lk(mTasksMutex);
 
     mTasks.push(std::make_shared<Task>(c));
-    std::for_each(mWorkers.begin(), mWorkers.end(), [] (std::unique_ptr<Worker>& wb) -> void {
+    foreachworker([] (std::unique_ptr<Worker>& wb) -> void {
         wb->task();
     });
     return mTasks.back()->future();
@@ -49,14 +58,16 @@ std::shared_future<void> Pool::schedule(Task::Callable c) {
 
 std::vector<Worker::Stats> Pool::stats() {
     std::vector<Worker::Stats> s;
-    for (int i = 0; i < size(); ++i) {
-        s.emplace_back(mWorkers.at(i)->stats());
-    }
+    foreachworker([&s] (std::unique_ptr<Worker>& wb) -> void {
+        s.emplace_back(wb->stats());
+    });
     return s;
 }
 
 Worker::View Pool::worker(int i) {
-    if (i >= 0 && i < size()) {
+    std::unique_lock<std::recursive_mutex> lkk(mWorkersMutex);
+
+    if (i >= 0 && i < mWorkers.size()) {
         return mWorkers.at(i)->view();
     } else {
         return Worker::View::empty();
@@ -79,7 +90,7 @@ std::shared_ptr<Task> Pool::task() {
 }
 
 void Pool::dump() {
-    std::for_each(mWorkers.begin(), mWorkers.end(), [] (std::unique_ptr<Worker>& wb) -> void {
+    foreachworker([] (std::unique_ptr<Worker>& wb) -> void {
         wb->dump();
     });
 }

@@ -45,6 +45,9 @@ class Pool {
     private:
         Worker* at(size_t) const;
 
+        void foreachworker(std::function<void(std::unique_ptr<Worker>&)>);
+
+        mutable std::recursive_mutex mWorkersMutex;
         std::vector<std::unique_ptr<Worker>> mWorkers;
 
         mutable std::mutex mTasksMutex;
