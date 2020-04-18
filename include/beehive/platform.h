@@ -26,6 +26,9 @@ class Platform {
 
         static std::vector<bool> affinity(std::thread::native_handle_type);
         static void affinity(std::thread::native_handle_type, const std::vector<bool>&);
+
+        static std::string name(std::thread::native_handle_type);
+        static void name(std::thread::native_handle_type, const char*);
     private:
         Platform() = delete;
 };

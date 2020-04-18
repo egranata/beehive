@@ -188,9 +188,9 @@ TEST(Pool, WorkerName) {
     Pool pool(3);
     pool.worker(1).name("test_worker");
 
-    ASSERT_STREQ("test_worker", pool.worker(1).name());
-    ASSERT_STREQ("worker[0]", pool.worker(0).name());
-    ASSERT_STREQ("worker[2]", pool.worker(2).name());
+    ASSERT_EQ("test_worker", pool.worker(1).name());
+    ASSERT_EQ("worker[0]", pool.worker(0).name());
+    ASSERT_EQ("worker[2]", pool.worker(2).name());
 }
 
 TEST(Pool, WorkerStats) {

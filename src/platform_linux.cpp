@@ -20,6 +20,7 @@ limitations under the License.
 #include <sys/sysinfo.h>
 #include <pthread.h>
 #include <type_traits>
+#include <vector>
 
 static_assert(std::is_same_v<std::thread::native_handle_type, pthread_t>);
 
@@ -50,6 +51,17 @@ void Platform::affinity(std::thread::native_handle_type nh, const std::vector<bo
         if (aff[i]) CPU_SET(i, &cpuset);
     }
     pthread_setaffinity_np(nh, sizeof(cpu_set_t), &cpuset);
+}
+
+std::string Platform::name(std::thread::native_handle_type nh) {
+    std::vector<char> buf(1024, 0);
+    if (0 == pthread_getname_np(nh, buf.data(), buf.size()))
+        return std::string(buf.data());
+    return "";
+}
+
+void Platform::name(std::thread::native_handle_type nh, const char* s) {
+    pthread_setname_np(nh, s);
 }
 
 #endif

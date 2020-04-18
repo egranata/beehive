@@ -24,10 +24,10 @@ limitations under the License.
 using namespace beehive;
 
 Worker::Worker(Pool* parent, int id) : mParent(parent), mId(id) {
-    name(nullptr);
     mWorkThread = std::thread([this] {
         this->WorkLoop();
     });
+    name(nullptr);
 }
 
 static std::mutex gDumpMutex;
@@ -77,18 +77,21 @@ Worker::Stats Worker::stats() {
     return mStats.load();
 }
 
-const char* Worker::name() const {
-    return mName.c_str();
+std::string Worker::name() {
+    return Platform::name(nativeid());
 }
 
 void Worker::name(const char* n) {
+    std::string name;
     if (n && n[0]) {
-        mName.assign(n);
+        name.assign(n);
     } else {
         std::stringstream ss;
         ss << "worker[" << mId << "]";
-        mName = ss.str();
+        name = ss.str();
     }
+
+    Platform::name(nativeid(), name.c_str());
 }
 
 int Worker::id() const {

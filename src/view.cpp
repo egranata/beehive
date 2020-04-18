@@ -28,7 +28,7 @@ Worker::View::operator bool() const {
     return (mWorker != nullptr);
 }
 
-const char* Worker::View::name() const {
+std::string Worker::View::name() {
     return mWorker->name();
 }
 

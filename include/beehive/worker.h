@@ -45,7 +45,7 @@ class Worker : public SignalingQueue::Handler {
 
         class View {
             public:
-                const char* name() const;
+                std::string name();
                 void name(const char*);
                 int id() const;
                 std::thread::id tid();
@@ -76,7 +76,7 @@ class Worker : public SignalingQueue::Handler {
 
         View view();
 
-        const char* name() const;
+        std::string name();
         void name(const char*);
         int id() const;
 
@@ -118,7 +118,6 @@ class Worker : public SignalingQueue::Handler {
 
         Pool* mParent;
         int mId;
-        std::string mName;
 
         std::thread mWorkThread;
         SignalingQueue mMsgQueue;
