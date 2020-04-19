@@ -18,6 +18,7 @@ limitations under the License.
 
 #include <future>
 #include <memory>
+#include <type_traits>
 
 namespace beehive {
 class Task {
@@ -41,9 +42,10 @@ class Task {
         std::shared_future<void> mFuture;
 };
 
-template<typename C, typename Ret = void, typename... Params>
+template<typename C, typename... Params>
 class SharedCallable {
     public:
+        using Ret = std::result_of_t<C(Params...)>;
         template<typename... Args>
         SharedCallable(Args... a) {
             mCallable = std::make_shared<C>(std::forward<Args>(a)...);

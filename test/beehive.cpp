@@ -168,7 +168,7 @@ TEST(Beehive, SharedCallable) {
     };
 
     Beehive beehive;
-    auto shh = SharedCallable<Task, int, int, int>(123);
+    auto shh = SharedCallable<Task, int, int>(123);
 
     auto shh_f = beehive.schedule(shh, 3, 4);
     shh_f.wait();
