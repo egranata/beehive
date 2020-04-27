@@ -42,21 +42,21 @@ void Worker::onAfterMessage() {
     mStats.idle().start();
 }
 
-SignalingQueue::Handler::Result Worker::onNop(const Message::NOP_Data&) {
-    return SignalingQueue::Handler::Result::CONTINUE;
+Message::Handler::Result Worker::onNop(const Message::NOP_Data&) {
+    return Message::Handler::Result::CONTINUE;
 }
-SignalingQueue::Handler::Result Worker::onExit(const Message::EXIT_Data&) {
-    return SignalingQueue::Handler::Result::FINISH;
+Message::Handler::Result Worker::onExit(const Message::EXIT_Data&) {
+    return Message::Handler::Result::FINISH;
 }
-SignalingQueue::Handler::Result Worker::onTask(const Message::TASK_Data&) {
+Message::Handler::Result Worker::onTask(const Message::TASK_Data&) {
     auto task = mParent->task();
     if (task) {
         mStats.run();
         task->run();
     }
-    return SignalingQueue::Handler::Result::CONTINUE;
+    return Message::Handler::Result::CONTINUE;
 }
-SignalingQueue::Handler::Result Worker::onDump(const Message::DUMP_Data&) {
+Message::Handler::Result Worker::onDump(const Message::DUMP_Data&) {
     auto s = stats();
     std::unique_lock<std::mutex> lk(gDumpMutex);
     std::cerr << "Thread: " << name() << std::endl;
@@ -64,7 +64,7 @@ SignalingQueue::Handler::Result Worker::onDump(const Message::DUMP_Data&) {
     std::cerr << "Number of messages processed: " << s.messages << std::endl;
     std::cerr << "Time active: " << s.active.count() << " milliseconds" << std::endl;
     std::cerr << "Time idle: " << s.idle.count() << " milliseconds" << std::endl;
-    return SignalingQueue::Handler::Result::CONTINUE;
+    return Message::Handler::Result::CONTINUE;
 }
 
 

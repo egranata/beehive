@@ -16,118 +16,121 @@ limitations under the License.
 
 #pragma once
 
+#include <chrono>
 #include <mutex>
 #include <condition_variable>
 #include <queue>
 #include <thread>
 #include <optional>
 #include <variant>
+#include <functional>
 
 namespace beehive {
-class Message {
-    public:
-        enum class Kind {
-            NOP,
-            EXIT,
-            TASK,
-            DUMP,
-        };
 
-        struct NOP_Data {
-            bool operator == (const NOP_Data& rhs) const { return true; }
-        };
-        struct EXIT_Data {
-            bool operator == (const EXIT_Data& rhs) const { return true; }
-        };
-        struct TASK_Data {
-            bool operator == (const TASK_Data& rhs) const { return true; }
-        };
-        struct DUMP_Data {
-            bool operator == (const DUMP_Data& rhs) const { return true; }
-        };
-
-        Message(NOP_Data);
-        Message(EXIT_Data);
-        Message(TASK_Data);
-        Message(DUMP_Data);
-
-        Kind kind() const;
-
-        std::optional<NOP_Data> nop() const;
-        std::optional<EXIT_Data> exit() const;
-        std::optional<TASK_Data> task() const;
-        std::optional<DUMP_Data> dump() const;
-
-        bool operator==(const Message& rhs) const;
-        bool operator!=(const Message& rhs) const;
-    private:
-
-        Kind mKind;
-        std::variant<NOP_Data, EXIT_Data, TASK_Data, DUMP_Data> mPayload;
-};
-
+template<typename MsgType>
 class MessageQueue {
     public:
-        MessageQueue();
+        MessageQueue() = default;
+        ~MessageQueue() = default;
 
-        void send(Message);
-        bool empty();
-        std::optional<Message> receive();
+        void send(MsgType msg) {
+            std::unique_lock<std::mutex> lk(mQueueMutex);
+            mQueue.push(msg);
+        }
+
+        bool empty() {
+            std::unique_lock<std::mutex> lk(mQueueMutex);
+            return mQueue.empty();
+        }
+
+        std::optional<MsgType> receive() {
+            std::unique_lock<std::mutex> lk(mQueueMutex);
+
+            if (mQueue.empty()) return std::nullopt;
+
+            auto msg = mQueue.front();
+            mQueue.pop();
+            return msg;
+        }
 
     private:
         MessageQueue(const MessageQueue&) = delete;
 
         std::mutex mQueueMutex;
-        std::queue<Message> mQueue;
+        std::queue<MsgType> mQueue;
 };
 
+template<typename MsgType>
 class SignalingQueue {
     public:
-        class Handler {
-            public:
-                enum class Result {
-                    CONTINUE,
-                    ERROR,
-                    FINISH,
-                };
-
-                virtual void onBeforeMessage();
-                virtual void onAfterMessage();
-
-                virtual Result onNop(const Message::NOP_Data&);
-                virtual Result onExit(const Message::EXIT_Data&);
-                virtual Result onTask(const Message::TASK_Data&);
-                virtual Result onDump(const Message::DUMP_Data&);
-            protected:
-                Handler();
-                virtual ~Handler();
+        enum class Result {
+            CONTINUE,
+            ERROR,
+            FINISH,
         };
 
-        class HandlerThread : public Handler {
-            public:
-                HandlerThread();
+        SignalingQueue() = default;
+        ~SignalingQueue() = default;
 
-                SignalingQueue* queue();
+        void send(MsgType m) {
+            mQueue.send(m);
+            mWaitCV.notify_all();
+        }
 
-                void join();
-                void detach();
-            private:
-                void loop();
-
-                std::unique_ptr<SignalingQueue> mQueue;
-                std::thread mThread;
-        };
-
-        SignalingQueue();
-
-        void send(Message);
-        Message receive();
+        MsgType receive() {
+            loop:
+                while(mQueue.empty()) {
+                    std::unique_lock<std::mutex> lk(mWaitMutex);
+                    mWaitCV.wait_for(lk, std::chrono::milliseconds(100));
+                }
+                std::optional<MsgType> m = mQueue.receive();
+                if (m.has_value()) return *m;
+                goto loop;
+        }
     
-        void loop(Handler*);
+        void loop(typename MsgType::Handler* h) {
+            auto r = Result::CONTINUE;
+            while (r == Result::CONTINUE) {
+                auto msg = receive();
+                r = h->handle(msg);
+            }
+        }
 
     private:
-        MessageQueue mQueue;
+        MessageQueue<MsgType> mQueue;
         std::mutex mWaitMutex;
         std::condition_variable mWaitCV;
+};
+
+template<typename MsgType>
+class HandlerThread : public MsgType::Handler {
+    public:
+        using SQ = SignalingQueue<MsgType>;
+
+        HandlerThread() : mQueue(std::make_unique<SQ>()) {
+            mThread = std::thread(std::bind(&HandlerThread::loop, this));
+        }
+
+        SQ* queue() {
+            return mQueue.get();
+        }
+
+        void join() {
+            mThread.join();
+        }
+        void detach() {
+            mThread.detach();
+        }
+    protected:
+        virtual void onStart() {}
+
+    private:
+        void loop() {
+            onStart();
+            mQueue->loop(this);
+        }
+
+        std::unique_ptr<SQ> mQueue;
+        std::thread mThread;
 };
 }

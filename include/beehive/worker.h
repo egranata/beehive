@@ -27,11 +27,12 @@ limitations under the License.
 #include <vector>
 #include <beehive/timecounter.h>
 #include <beehive/mq.h>
+#include <beehive/message.h>
 
 namespace beehive {
 class Pool;
 
-class Worker : public SignalingQueue::Handler {
+class Worker : public Message::Handler {
     public:
         struct Stats {
             uint64_t messages;
@@ -120,7 +121,7 @@ class Worker : public SignalingQueue::Handler {
         int mId;
 
         std::thread mWorkThread;
-        SignalingQueue mMsgQueue;
+        SignalingQueue<Message> mMsgQueue;
         AtomicStats mStats;
 
         void WorkLoop();

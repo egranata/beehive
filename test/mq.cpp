@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 #include <beehive/mq.h>
+#include <beehive/message.h>
 #include "gtest/gtest.h"
 #include <thread>
 #include <chrono>
@@ -32,13 +33,13 @@ TEST(Message, Equality) {
 }
 
 TEST(MessageQueue, Empty) {
-    MessageQueue mq;
+    MessageQueue<Message> mq;
     ASSERT_TRUE(mq.empty());
     ASSERT_EQ(std::nullopt, mq.receive());
 }
 
 TEST(MessageQueue, SendReceive) {
-    MessageQueue mq;
+    MessageQueue<Message> mq;
     mq.send({Message::EXIT_Data{}});
     auto msg = mq.receive();
     ASSERT_TRUE(msg.has_value());
@@ -47,20 +48,20 @@ TEST(MessageQueue, SendReceive) {
 }
 
 TEST(MessageQueue, ReceiveNull) {
-    MessageQueue mq;
+    MessageQueue<Message> mq;
     mq.send({Message::EXIT_Data{}});
     ASSERT_TRUE(mq.receive());
 }
 
 TEST(MessageQueue, ReceiveWhatYouSend) {
-    MessageQueue mq;
+    MessageQueue<Message> mq;
     mq.send({Message::EXIT_Data{}});
     ASSERT_TRUE(mq.receive());
     ASSERT_FALSE(mq.receive());
 }
 
 TEST(MessageQueue, ReceiveInOrder) {
-    MessageQueue mq;
+    MessageQueue<Message> mq;
     mq.send({Message::EXIT_Data{}});
     mq.send({Message::TASK_Data{}});
     auto m1 = mq.receive();
@@ -76,7 +77,7 @@ TEST(MessageQueue, ReceiveInOrder) {
 }
 
 TEST(SignalingQueue, SendReceive) {
-    SignalingQueue sq;
+    SignalingQueue<Message> sq;
     std::thread t1([&sq] () -> void {
         std::this_thread::sleep_for(500ms);
         sq.send({Message::TASK_Data{}});
@@ -91,7 +92,7 @@ TEST(SignalingQueue, SendReceive) {
 }
 
 TEST(SignalingQueue, ReceiveTwo) {
-    SignalingQueue sq;
+    SignalingQueue<Message> sq;
     std::optional<Message> m1;
     std::optional<Message> m2;
     std::thread t1([&sq] () -> void {
@@ -111,9 +112,9 @@ TEST(SignalingQueue, ReceiveTwo) {
 }
 
 TEST(SignalingQueue, Loop) {
-    class TestHandler : public SignalingQueue::Handler {
+    class TestHandler : public Message::Handler {
         public:
-            using R = SignalingQueue::Handler::Result;
+            using R = Message::Handler::Result;
 
             void onBeforeMessage() override {
                 ++mBefores;
@@ -125,19 +126,19 @@ TEST(SignalingQueue, Loop) {
 
             R onNop(const Message::NOP_Data& p) override {
                 ++mNops;
-                return SignalingQueue::Handler::onNop(p);
+                return Message::Handler::onNop(p);
             }
             R onTask(const Message::TASK_Data& p) override {
                 ++mTasks;
-                return SignalingQueue::Handler::onTask(p);
+                return Message::Handler::onTask(p);
             }
             R onExit(const Message::EXIT_Data& p) override {
                 ++mExits;
-                return SignalingQueue::Handler::onExit(p);
+                return Message::Handler::onExit(p);
             }
             R onDump(const Message::DUMP_Data& p) override {
                 ++mDumps;
-                return SignalingQueue::Handler::onDump(p);
+                return Message::Handler::onDump(p);
             }
 
             size_t befores() const { return mBefores; }
@@ -157,7 +158,7 @@ TEST(SignalingQueue, Loop) {
             size_t mExits = 0;
             size_t mTasks = 0;
     };
-    SignalingQueue sq;
+    SignalingQueue<Message> sq;
     TestHandler th;
     std::thread t1([&sq, &th] () -> void {
         sq.loop(&th);
@@ -182,9 +183,13 @@ TEST(SignalingQueue, Loop) {
 }
 
 TEST(SignalingQueue, HandlerThread) {
-    class TestHandler : public SignalingQueue::HandlerThread {
+    class TestHandler : public HandlerThread<Message> {
         public:
-            using R = SignalingQueue::Handler::Result;
+            using R = Message::Handler::Result;
+
+            void onStart() override {
+                ++mOnStart;
+            }
 
             void onBeforeMessage() override {
                 ++mBefores;
@@ -196,20 +201,22 @@ TEST(SignalingQueue, HandlerThread) {
 
             R onNop(const Message::NOP_Data& p) override {
                 ++mNops;
-                return SignalingQueue::Handler::onNop(p);
+                return Message::Handler::onNop(p);
             }
             R onTask(const Message::TASK_Data& p) override {
                 ++mTasks;
-                return SignalingQueue::Handler::onTask(p);
+                return Message::Handler::onTask(p);
             }
             R onExit(const Message::EXIT_Data& p) override {
                 ++mExits;
-                return SignalingQueue::Handler::onExit(p);
+                return Message::Handler::onExit(p);
             }
             R onDump(const Message::DUMP_Data& p) override {
                 ++mDumps;
-                return SignalingQueue::Handler::onDump(p);
+                return Message::Handler::onDump(p);
             }
+
+            size_t starts() const { return mOnStart; }
 
             size_t befores() const { return mBefores; }
             size_t afters() const { return mAfters; }
@@ -220,6 +227,8 @@ TEST(SignalingQueue, HandlerThread) {
             size_t tasks() const { return mTasks; }
 
         private:
+            size_t mOnStart = 0;
+
             size_t mBefores = 0;
             size_t mAfters = 0;
 
@@ -239,6 +248,8 @@ TEST(SignalingQueue, HandlerThread) {
     th.queue()->send({Message::TASK_Data{}});
     th.queue()->send({Message::EXIT_Data{}});
     th.join();
+
+    ASSERT_EQ(1, th.starts());
 
     ASSERT_EQ(7, th.befores());
     ASSERT_EQ(7, th.afters());
