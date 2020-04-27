@@ -23,9 +23,9 @@ using namespace beehive;
 using namespace std::chrono_literals;
 
 TEST(Message, Equality) {
-    Message m1(Message::Kind::EXIT);
-    Message m2(Message::Kind::TASK);
-    Message m3(Message::Kind::EXIT);
+    Message m1(Message::EXIT_Data{});
+    Message m2(Message::TASK_Data{});
+    Message m3(Message::EXIT_Data{});
     ASSERT_EQ(m1, m3);
     ASSERT_NE(m2, m3);
     ASSERT_NE(m1, m2);
@@ -34,73 +34,79 @@ TEST(Message, Equality) {
 TEST(MessageQueue, Empty) {
     MessageQueue mq;
     ASSERT_TRUE(mq.empty());
-    ASSERT_FALSE(mq.receive(nullptr));
+    ASSERT_EQ(std::nullopt, mq.receive());
 }
 
 TEST(MessageQueue, SendReceive) {
     MessageQueue mq;
-    mq.send(Message::Kind::EXIT);
-    Message m;
-    ASSERT_TRUE(mq.receive(&m));
-    ASSERT_EQ(Message::Kind::EXIT, m.kind());
+    mq.send({Message::EXIT_Data{}});
+    auto msg = mq.receive();
+    ASSERT_TRUE(msg.has_value());
+    ASSERT_EQ(Message::Kind::EXIT, msg->kind());
+    ASSERT_NE(std::nullopt, msg->exit());
 }
 
 TEST(MessageQueue, ReceiveNull) {
     MessageQueue mq;
-    mq.send(Message::Kind::EXIT);
-    ASSERT_TRUE(mq.receive(nullptr));
+    mq.send({Message::EXIT_Data{}});
+    ASSERT_TRUE(mq.receive());
 }
 
 TEST(MessageQueue, ReceiveWhatYouSend) {
     MessageQueue mq;
-    mq.send(Message::Kind::EXIT);
-    ASSERT_TRUE(mq.receive(nullptr));
-    ASSERT_FALSE(mq.receive(nullptr));
+    mq.send({Message::EXIT_Data{}});
+    ASSERT_TRUE(mq.receive());
+    ASSERT_FALSE(mq.receive());
 }
 
 TEST(MessageQueue, ReceiveInOrder) {
     MessageQueue mq;
-    mq.send(Message::Kind::EXIT);
-    mq.send(Message::Kind::TASK);
-    Message m;
-    ASSERT_TRUE(mq.receive(&m));
-    ASSERT_EQ(Message::Kind::EXIT, m.kind());
-    ASSERT_TRUE(mq.receive(&m));
-    ASSERT_EQ(Message::Kind::TASK, m.kind());
+    mq.send({Message::EXIT_Data{}});
+    mq.send({Message::TASK_Data{}});
+    auto m1 = mq.receive();
+    auto m2 = mq.receive();
+    ASSERT_TRUE(m1);
+    ASSERT_EQ(Message::Kind::EXIT, m1->kind());
+    ASSERT_NE(std::nullopt, m1->exit());
+    ASSERT_EQ(std::nullopt, m1->task());
+    ASSERT_TRUE(m2);
+    ASSERT_EQ(Message::Kind::TASK, m2->kind());
+    ASSERT_NE(std::nullopt, m2->task());
+    ASSERT_EQ(std::nullopt, m2->exit());
 }
 
 TEST(SignalingQueue, SendReceive) {
     SignalingQueue sq;
-    Message m = Message::Kind::NOP;
     std::thread t1([&sq] () -> void {
         std::this_thread::sleep_for(500ms);
-        sq.send(Message::Kind::TASK);
+        sq.send({Message::TASK_Data{}});
     });
+    std::optional<Message> m;
     std::thread t2([&sq, &m] () -> void {
         m = sq.receive();
     });
     t2.join();
-    ASSERT_EQ(Message::Kind::TASK, m.kind());
+    ASSERT_EQ(Message::Kind::TASK, m->kind());
     t1.join();
 }
 
 TEST(SignalingQueue, ReceiveTwo) {
     SignalingQueue sq;
-    Message m1 = Message::Kind::NOP;
-    Message m2 = Message::Kind::NOP;
+    std::optional<Message> m1;
+    std::optional<Message> m2;
     std::thread t1([&sq] () -> void {
         std::this_thread::sleep_for(500ms);
-        sq.send(Message::Kind::TASK);
+        sq.send({Message::TASK_Data{}});
         std::this_thread::sleep_for(500ms);
-        sq.send(Message::Kind::EXIT);
+        sq.send({Message::EXIT_Data{}});
     });
     std::thread t2([&sq, &m1, &m2] () -> void {
         m1 = sq.receive();
         m2 = sq.receive();
     });
     t2.join();
-    ASSERT_EQ(Message::Kind::TASK, m1.kind());
-    ASSERT_EQ(Message::Kind::EXIT, m2.kind());
+    ASSERT_EQ(Message::Kind::TASK, m1->kind());
+    ASSERT_EQ(Message::Kind::EXIT, m2->kind());
     t1.join();
 }
 
@@ -157,13 +163,13 @@ TEST(SignalingQueue, Loop) {
         sq.loop(&th);
     });
 
-    sq.send(Message::Kind::TASK);
-    sq.send(Message::Kind::TASK);
-    sq.send(Message::Kind::NOP);
-    sq.send(Message::Kind::DUMP);
-    sq.send(Message::Kind::NOP);
-    sq.send(Message::Kind::TASK);
-    sq.send(Message::Kind::EXIT);
+    sq.send({Message::TASK_Data{}});
+    sq.send({Message::TASK_Data{}});
+    sq.send({Message::NOP_Data{}});
+    sq.send({Message::DUMP_Data{}});
+    sq.send({Message::NOP_Data{}});
+    sq.send({Message::TASK_Data{}});
+    sq.send({Message::EXIT_Data{}});
     t1.join();
 
     ASSERT_EQ(7, th.befores());
@@ -225,13 +231,13 @@ TEST(SignalingQueue, HandlerThread) {
 
     TestHandler th;
 
-    th.queue()->send(Message::Kind::TASK);
-    th.queue()->send(Message::Kind::TASK);
-    th.queue()->send(Message::Kind::NOP);
-    th.queue()->send(Message::Kind::DUMP);
-    th.queue()->send(Message::Kind::NOP);
-    th.queue()->send(Message::Kind::TASK);
-    th.queue()->send(Message::Kind::EXIT);
+    th.queue()->send({Message::TASK_Data{}});
+    th.queue()->send({Message::TASK_Data{}});
+    th.queue()->send({Message::NOP_Data{}});
+    th.queue()->send({Message::DUMP_Data{}});
+    th.queue()->send({Message::NOP_Data{}});
+    th.queue()->send({Message::TASK_Data{}});
+    th.queue()->send({Message::EXIT_Data{}});
     th.join();
 
     ASSERT_EQ(7, th.befores());

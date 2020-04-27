@@ -20,6 +20,8 @@ limitations under the License.
 #include <condition_variable>
 #include <queue>
 #include <thread>
+#include <optional>
+#include <variant>
 
 namespace beehive {
 class Message {
@@ -30,13 +32,38 @@ class Message {
             TASK,
             DUMP,
         };
-        Message(Kind k = Kind::NOP);
+
+        struct NOP_Data {
+            bool operator == (const NOP_Data& rhs) const { return true; }
+        };
+        struct EXIT_Data {
+            bool operator == (const EXIT_Data& rhs) const { return true; }
+        };
+        struct TASK_Data {
+            bool operator == (const TASK_Data& rhs) const { return true; }
+        };
+        struct DUMP_Data {
+            bool operator == (const DUMP_Data& rhs) const { return true; }
+        };
+
+        Message(NOP_Data);
+        Message(EXIT_Data);
+        Message(TASK_Data);
+        Message(DUMP_Data);
 
         Kind kind() const;
+
+        std::optional<NOP_Data> nop() const;
+        std::optional<EXIT_Data> exit() const;
+        std::optional<TASK_Data> task() const;
+        std::optional<DUMP_Data> dump() const;
+
         bool operator==(const Message& rhs) const;
         bool operator!=(const Message& rhs) const;
     private:
+
         Kind mKind;
+        std::variant<NOP_Data, EXIT_Data, TASK_Data, DUMP_Data> mPayload;
 };
 
 class MessageQueue {
@@ -45,7 +72,7 @@ class MessageQueue {
 
         void send(Message);
         bool empty();
-        bool receive(Message*);
+        std::optional<Message> receive();
 
     private:
         MessageQueue(const MessageQueue&) = delete;

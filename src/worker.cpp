@@ -120,15 +120,15 @@ Worker::View Worker::view() {
 }
 
 void Worker::exit() {
-    send(Message::Kind::EXIT);
+    send(Message{Message::EXIT_Data{}});
 }
 
 void Worker::task() {
-    send(Message::Kind::TASK);
+    send(Message{Message::TASK_Data{}});
 }
 
 void Worker::dump() {
-    send(Message::Kind::DUMP);
+    send(Message{Message::DUMP_Data{}});
 }
 
 std::vector<bool> Worker::affinity() {

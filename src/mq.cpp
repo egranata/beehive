@@ -20,14 +20,40 @@ limitations under the License.
 using namespace beehive;
 using namespace std::chrono_literals;
 
-Message::Message(Kind k) : mKind(k) {}
+Message::Message(NOP_Data p) : mKind(Message::Kind::NOP), mPayload(p) {}
+Message::Message(EXIT_Data p) : mKind(Message::Kind::EXIT), mPayload(p) {}
+Message::Message(TASK_Data p) : mKind(Message::Kind::TASK), mPayload(p) {}
+Message::Message(DUMP_Data p) : mKind(Message::Kind::DUMP), mPayload(p) {}
 
 Message::Kind Message::kind() const {
     return mKind;
 }
 
+std::optional<Message::NOP_Data> Message::nop() const {
+    if (std::holds_alternative<NOP_Data>(mPayload)) return std::get<NOP_Data>(mPayload);
+    else return std::nullopt;
+}
+std::optional<Message::EXIT_Data> Message::exit() const {
+    if (std::holds_alternative<EXIT_Data>(mPayload)) return std::get<EXIT_Data>(mPayload);
+    else return std::nullopt;
+}
+std::optional<Message::TASK_Data> Message::task() const {
+    if (std::holds_alternative<TASK_Data>(mPayload)) return std::get<TASK_Data>(mPayload);
+    else return std::nullopt;
+}
+std::optional<Message::DUMP_Data> Message::dump() const {
+    if (std::holds_alternative<DUMP_Data>(mPayload)) return std::get<DUMP_Data>(mPayload);
+    else return std::nullopt;
+}
+
 bool Message::operator==(const Message& rhs) const {
-    return kind() == rhs.kind();
+    if (mKind != rhs.mKind) return false;
+    if (mPayload.index() != rhs.mPayload.index()) return false;
+
+    return (nop() == rhs.nop()) &&
+           (exit() == rhs.exit()) &&
+           (task() == rhs.task()) &&
+           (dump() == rhs.dump());
 }
 
 bool Message::operator!=(const Message& rhs) const {
@@ -48,13 +74,14 @@ bool MessageQueue::empty() {
     return mQueue.empty();
 }
 
-bool MessageQueue::receive(Message* m) {
+std::optional<Message> MessageQueue::receive() {
     std::unique_lock<std::mutex> lk(mQueueMutex);
 
-    if (mQueue.empty()) return false;
-    if (m) *m = mQueue.front();
+    if (mQueue.empty()) return std::nullopt;
+
+    auto msg = mQueue.front();
     mQueue.pop();
-    return true;
+    return msg;
 }
 
 SignalingQueue::SignalingQueue() = default;
@@ -70,9 +97,9 @@ loop:
         std::unique_lock<std::mutex> lk(mWaitMutex);
         mWaitCV.wait_for(lk, 100ms);
     }
-    Message m;
-    if (!mQueue.receive(&m)) goto loop;
-    return m;
+    std::optional<Message> m = mQueue.receive();
+    if (m.has_value()) return *m;
+    goto loop;
 }
 
 void SignalingQueue::loop(Handler* h) {
