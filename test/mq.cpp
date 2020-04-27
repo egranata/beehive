@@ -174,3 +174,71 @@ TEST(SignalingQueue, Loop) {
     ASSERT_EQ(1, th.dumps());
     ASSERT_EQ(1, th.exits());
 }
+
+TEST(SignalingQueue, HandlerThread) {
+    class TestHandler : public SignalingQueue::HandlerThread {
+        public:
+            using R = SignalingQueue::Handler::Result;
+
+            void onBeforeMessage() override {
+                ++mBefores;
+            }
+
+            void onAfterMessage() override {
+                ++mAfters;
+            }
+
+            R onNop() override {
+                ++mNops;
+                return SignalingQueue::Handler::onNop();
+            }
+            R onTask() override {
+                ++mTasks;
+                return SignalingQueue::Handler::onTask();
+            }
+            R onExit() override {
+                ++mExits;
+                return SignalingQueue::Handler::onExit();
+            }
+            R onDump() override {
+                ++mDumps;
+                return SignalingQueue::Handler::onDump();
+            }
+
+            size_t befores() const { return mBefores; }
+            size_t afters() const { return mAfters; }
+
+            size_t nops() const { return mNops; }
+            size_t dumps() const { return mDumps; }
+            size_t exits() const { return mExits; }
+            size_t tasks() const { return mTasks; }
+
+        private:
+            size_t mBefores = 0;
+            size_t mAfters = 0;
+
+            size_t mNops = 0;
+            size_t mDumps = 0;
+            size_t mExits = 0;
+            size_t mTasks = 0;
+    };
+
+    TestHandler th;
+
+    th.queue()->send(Message::Kind::TASK);
+    th.queue()->send(Message::Kind::TASK);
+    th.queue()->send(Message::Kind::NOP);
+    th.queue()->send(Message::Kind::DUMP);
+    th.queue()->send(Message::Kind::NOP);
+    th.queue()->send(Message::Kind::TASK);
+    th.queue()->send(Message::Kind::EXIT);
+    th.join();
+
+    ASSERT_EQ(7, th.befores());
+    ASSERT_EQ(7, th.afters());
+
+    ASSERT_EQ(3, th.tasks());
+    ASSERT_EQ(2, th.nops());
+    ASSERT_EQ(1, th.dumps());
+    ASSERT_EQ(1, th.exits());
+}

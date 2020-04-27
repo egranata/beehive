@@ -19,6 +19,7 @@ limitations under the License.
 #include <mutex>
 #include <condition_variable>
 #include <queue>
+#include <thread>
 
 namespace beehive {
 class Message {
@@ -73,6 +74,21 @@ class SignalingQueue {
             protected:
                 Handler();
                 virtual ~Handler();
+        };
+
+        class HandlerThread : public Handler {
+            public:
+                HandlerThread();
+
+                SignalingQueue* queue();
+
+                void join();
+                void detach();
+            private:
+                void loop();
+
+                std::unique_ptr<SignalingQueue> mQueue;
+                std::thread mThread;
         };
 
         SignalingQueue();

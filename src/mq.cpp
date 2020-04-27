@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 #include <beehive/mq.h>
+#include <functional>
 
 using namespace beehive;
 using namespace std::chrono_literals;
@@ -117,4 +118,24 @@ SignalingQueue::Handler::Result SignalingQueue::Handler::onTask() {
 
 SignalingQueue::Handler::Result SignalingQueue::Handler::onDump() {
     return Result::CONTINUE;
+}
+
+SignalingQueue::HandlerThread::HandlerThread() {
+    mQueue = std::make_unique<SignalingQueue>();
+    mThread = std::thread(std::bind(&HandlerThread::loop, this));
+}
+
+void SignalingQueue::HandlerThread::join() {
+    mThread.join();
+}
+void SignalingQueue::HandlerThread::detach() {
+    mThread.detach();
+}
+
+SignalingQueue* SignalingQueue::HandlerThread::queue() {
+    return mQueue.get();
+}
+
+void SignalingQueue::HandlerThread::loop() {
+    mQueue->loop(this);
 }
