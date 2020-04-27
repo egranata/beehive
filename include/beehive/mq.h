@@ -94,10 +94,10 @@ class SignalingQueue {
                 virtual void onBeforeMessage();
                 virtual void onAfterMessage();
 
-                virtual Result onNop();
-                virtual Result onExit();
-                virtual Result onTask();
-                virtual Result onDump();
+                virtual Result onNop(const Message::NOP_Data&);
+                virtual Result onExit(const Message::EXIT_Data&);
+                virtual Result onTask(const Message::TASK_Data&);
+                virtual Result onDump(const Message::DUMP_Data&);
             protected:
                 Handler();
                 virtual ~Handler();

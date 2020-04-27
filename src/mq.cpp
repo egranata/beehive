@@ -109,16 +109,16 @@ void SignalingQueue::loop(Handler* h) {
         h->onBeforeMessage();
         switch (msg.kind()) {
             case Message::Kind::NOP: {
-                r = h->onNop();
+                r = h->onNop(*msg.nop());
             } break;
             case Message::Kind::EXIT: {
-                r = h->onExit();
+                r = h->onExit(*msg.exit());
             } break;
             case Message::Kind::DUMP: {
-                r = h->onDump();
+                r = h->onDump(*msg.dump());
             } break;
             case Message::Kind::TASK: {
-                r = h->onTask();
+                r = h->onTask(*msg.task());
             } break;
         }
         h->onAfterMessage();
@@ -131,19 +131,19 @@ SignalingQueue::Handler::~Handler() = default;
 void SignalingQueue::Handler::onBeforeMessage() {}
 void SignalingQueue::Handler::onAfterMessage() {}
 
-SignalingQueue::Handler::Result SignalingQueue::Handler::onNop() {
+SignalingQueue::Handler::Result SignalingQueue::Handler::onNop(const Message::NOP_Data&) {
     return Result::CONTINUE;
 }
 
-SignalingQueue::Handler::Result SignalingQueue::Handler::onExit() {
+SignalingQueue::Handler::Result SignalingQueue::Handler::onExit(const Message::EXIT_Data&) {
     return Result::FINISH;
 }
 
-SignalingQueue::Handler::Result SignalingQueue::Handler::onTask() {
+SignalingQueue::Handler::Result SignalingQueue::Handler::onTask(const Message::TASK_Data&) {
     return Result::CONTINUE;
 }
 
-SignalingQueue::Handler::Result SignalingQueue::Handler::onDump() {
+SignalingQueue::Handler::Result SignalingQueue::Handler::onDump(const Message::DUMP_Data&) {
     return Result::CONTINUE;
 }
 

@@ -42,13 +42,13 @@ void Worker::onAfterMessage() {
     mStats.idle().start();
 }
 
-SignalingQueue::Handler::Result Worker::onNop() {
+SignalingQueue::Handler::Result Worker::onNop(const Message::NOP_Data&) {
     return SignalingQueue::Handler::Result::CONTINUE;
 }
-SignalingQueue::Handler::Result Worker::onExit() {
+SignalingQueue::Handler::Result Worker::onExit(const Message::EXIT_Data&) {
     return SignalingQueue::Handler::Result::FINISH;
 }
-SignalingQueue::Handler::Result Worker::onTask() {
+SignalingQueue::Handler::Result Worker::onTask(const Message::TASK_Data&) {
     auto task = mParent->task();
     if (task) {
         mStats.run();
@@ -56,7 +56,7 @@ SignalingQueue::Handler::Result Worker::onTask() {
     }
     return SignalingQueue::Handler::Result::CONTINUE;
 }
-SignalingQueue::Handler::Result Worker::onDump() {
+SignalingQueue::Handler::Result Worker::onDump(const Message::DUMP_Data&) {
     auto s = stats();
     std::unique_lock<std::mutex> lk(gDumpMutex);
     std::cerr << "Thread: " << name() << std::endl;

@@ -92,10 +92,10 @@ class Worker : public SignalingQueue::Handler {
         void onBeforeMessage() override;
         void onAfterMessage() override;
 
-        Result onNop() override;
-        Result onExit() override;
-        Result onTask() override;
-        Result onDump() override;
+        Result onNop(const Message::NOP_Data&) override;
+        Result onExit(const Message::EXIT_Data&) override;
+        Result onTask(const Message::TASK_Data&) override;
+        Result onDump(const Message::DUMP_Data&) override;
     private:
         friend class Worker::View;
 

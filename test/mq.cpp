@@ -123,21 +123,21 @@ TEST(SignalingQueue, Loop) {
                 ++mAfters;
             }
 
-            R onNop() override {
+            R onNop(const Message::NOP_Data& p) override {
                 ++mNops;
-                return SignalingQueue::Handler::onNop();
+                return SignalingQueue::Handler::onNop(p);
             }
-            R onTask() override {
+            R onTask(const Message::TASK_Data& p) override {
                 ++mTasks;
-                return SignalingQueue::Handler::onTask();
+                return SignalingQueue::Handler::onTask(p);
             }
-            R onExit() override {
+            R onExit(const Message::EXIT_Data& p) override {
                 ++mExits;
-                return SignalingQueue::Handler::onExit();
+                return SignalingQueue::Handler::onExit(p);
             }
-            R onDump() override {
+            R onDump(const Message::DUMP_Data& p) override {
                 ++mDumps;
-                return SignalingQueue::Handler::onDump();
+                return SignalingQueue::Handler::onDump(p);
             }
 
             size_t befores() const { return mBefores; }
@@ -194,21 +194,21 @@ TEST(SignalingQueue, HandlerThread) {
                 ++mAfters;
             }
 
-            R onNop() override {
+            R onNop(const Message::NOP_Data& p) override {
                 ++mNops;
-                return SignalingQueue::Handler::onNop();
+                return SignalingQueue::Handler::onNop(p);
             }
-            R onTask() override {
+            R onTask(const Message::TASK_Data& p) override {
                 ++mTasks;
-                return SignalingQueue::Handler::onTask();
+                return SignalingQueue::Handler::onTask(p);
             }
-            R onExit() override {
+            R onExit(const Message::EXIT_Data& p) override {
                 ++mExits;
-                return SignalingQueue::Handler::onExit();
+                return SignalingQueue::Handler::onExit(p);
             }
-            R onDump() override {
+            R onDump(const Message::DUMP_Data& p) override {
                 ++mDumps;
-                return SignalingQueue::Handler::onDump();
+                return SignalingQueue::Handler::onDump(p);
             }
 
             size_t befores() const { return mBefores; }
