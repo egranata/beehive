@@ -97,6 +97,7 @@ class Worker : public Message::Handler {
         Result onExit(const Message::EXIT_Data&) override;
         Result onTask(const Message::TASK_Data&) override;
         Result onDump(const Message::DUMP_Data&) override;
+        Result onRename(const Message::RENAME_Data&) override;
     private:
         friend class Worker::View;
 

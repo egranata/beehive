@@ -189,6 +189,7 @@ TEST(Pool, WorkerViewId) {
 TEST(Pool, WorkerName) {
     Pool pool(3);
     pool.worker(1).name("test_worker");
+    pool.schedule([] () -> void {}).wait();
 
     ASSERT_EQ("test_worker", pool.worker(1).name());
     ASSERT_EQ("worker[0]", pool.worker(0).name());

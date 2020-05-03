@@ -66,7 +66,10 @@ Message::Handler::Result Worker::onDump(const Message::DUMP_Data&) {
     std::cerr << "Time idle: " << s.idle.count() << " milliseconds" << std::endl;
     return Message::Handler::Result::CONTINUE;
 }
-
+Message::Handler::Result Worker::onRename(const Message::RENAME_Data& r) {
+    Platform::name(nativeid(), r.name.c_str());
+    return Message::Handler::Result::CONTINUE;
+}
 
 void Worker::WorkLoop() {
     mStats.idle().start();
@@ -91,7 +94,7 @@ void Worker::name(const char* n) {
         name = ss.str();
     }
 
-    Platform::name(nativeid(), name.c_str());
+    send(Message::RENAME_Data{name});
 }
 
 int Worker::id() const {
