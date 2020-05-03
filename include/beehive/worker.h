@@ -69,6 +69,11 @@ class Worker : public Message::Handler {
         Worker(Pool*, int);
         ~Worker();
 
+        Worker(const Worker&) = delete;
+        Worker& operator=(const Worker&) = delete;
+        Worker(const Worker&&) = delete;
+        Worker& operator=(const Worker&&) = delete;
+
         void send(Message);
 
         void exit();

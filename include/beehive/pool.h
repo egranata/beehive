@@ -19,6 +19,7 @@ limitations under the License.
 #include <stddef.h>
 #include <beehive/task.h>
 #include <beehive/pq.h>
+#include <beehive/idempotency.h>
 #include <beehive/worker.h>
 #include <memory>
 #include <vector>
@@ -31,6 +32,11 @@ class Pool {
     public:
         Pool(size_t = 0);
         ~Pool();
+
+        Pool(const Pool&) = delete;
+        Pool& operator=(const Pool&) = delete;
+        Pool(const Pool&&) = delete;
+        Pool& operator=(const Pool&&) = delete;
 
         size_t size() const;
         std::shared_future<void> schedule(Task::Callable, Task::Priority = Task::DefaultPriority);
@@ -45,6 +51,8 @@ class Pool {
 
         void addworker();
 
+        IdempotencySet& idempotency();
+
     private:
         Worker* at(size_t) const;
 
@@ -54,5 +62,7 @@ class Pool {
         std::vector<std::unique_ptr<Worker>> mWorkers;
 
         PriorityQueue<Task::Priority, std::shared_ptr<Task>> mTasks;
+
+        IdempotencySet mIdempotencySet;
 };
 }

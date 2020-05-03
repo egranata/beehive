@@ -94,3 +94,7 @@ void Pool::addworker() {
     auto i = mWorkers.size();
     mWorkers.emplace_back(std::make_unique<Worker>(this, i));
 }
+
+IdempotencySet& Pool::idempotency() {
+    return mIdempotencySet;
+}
