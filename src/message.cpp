@@ -23,6 +23,7 @@ Message::Message(NOP_Data p) : mKind(Message::Kind::NOP), mPayload(p) {}
 Message::Message(EXIT_Data p) : mKind(Message::Kind::EXIT), mPayload(p) {}
 Message::Message(TASK_Data p) : mKind(Message::Kind::TASK), mPayload(p) {}
 Message::Message(DUMP_Data p) : mKind(Message::Kind::DUMP), mPayload(p) {}
+Message::Message(RENAME_Data p) : mKind(Message::Kind::RENAME), mPayload(p) {}
 
 Message::Kind Message::kind() const {
     return mKind;
@@ -44,6 +45,10 @@ std::optional<Message::DUMP_Data> Message::dump() const {
     if (std::holds_alternative<DUMP_Data>(mPayload)) return std::get<DUMP_Data>(mPayload);
     else return std::nullopt;
 }
+std::optional<Message::RENAME_Data> Message::rename() const {
+    if (std::holds_alternative<RENAME_Data>(mPayload)) return std::get<RENAME_Data>(mPayload);
+    else return std::nullopt;
+}
 
 bool Message::operator==(const Message& rhs) const {
     if (mKind != rhs.mKind) return false;
@@ -52,7 +57,8 @@ bool Message::operator==(const Message& rhs) const {
     return (nop() == rhs.nop()) &&
            (exit() == rhs.exit()) &&
            (task() == rhs.task()) &&
-           (dump() == rhs.dump());
+           (dump() == rhs.dump()) &&
+           (rename() == rhs.rename());
 }
 
 bool Message::operator!=(const Message& rhs) const {
@@ -83,6 +89,9 @@ Message::Handler::Result Message::Handler::handle(const Message& msg) {
         case Message::Kind::TASK:
             r = onTask(*msg.task());
             break;
+        case Message::Kind::RENAME:
+            r = onRename(*msg.rename());
+            break;
     }
 
     onAfterMessage();
@@ -103,5 +112,9 @@ Message::Handler::Result Message::Handler::onTask(const TASK_Data&) {
 }
 
 Message::Handler::Result Message::Handler::onDump(const DUMP_Data&) {
+    return Result::CONTINUE;
+}
+
+Message::Handler::Result Message::Handler::onRename(const RENAME_Data&) {
     return Result::CONTINUE;
 }

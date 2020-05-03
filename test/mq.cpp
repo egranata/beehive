@@ -215,6 +215,11 @@ TEST(SignalingQueue, HandlerThread) {
                 ++mDumps;
                 return Message::Handler::onDump(p);
             }
+            R onRename(const Message::RENAME_Data& p) override {
+                ++mRenames;
+                mNames.push_back(p.name);
+                return Message::Handler::onRename(p);
+            }
 
             size_t starts() const { return mOnStart; }
 
@@ -225,6 +230,12 @@ TEST(SignalingQueue, HandlerThread) {
             size_t dumps() const { return mDumps; }
             size_t exits() const { return mExits; }
             size_t tasks() const { return mTasks; }
+            size_t renames() const { return mRenames; }
+
+            const char* name(size_t i) const {
+                if (i >= mNames.size()) return nullptr;
+                return mNames.at(i).c_str();
+            }
 
         private:
             size_t mOnStart = 0;
@@ -235,7 +246,10 @@ TEST(SignalingQueue, HandlerThread) {
             size_t mNops = 0;
             size_t mDumps = 0;
             size_t mExits = 0;
+            size_t mRenames = 0;
             size_t mTasks = 0;
+
+            std::vector<std::string> mNames;
     };
 
     TestHandler th;
@@ -244,7 +258,7 @@ TEST(SignalingQueue, HandlerThread) {
     th.queue()->send({Message::TASK_Data{}});
     th.queue()->send({Message::NOP_Data{}});
     th.queue()->send({Message::DUMP_Data{}});
-    th.queue()->send({Message::NOP_Data{}});
+    th.queue()->send({Message::RENAME_Data{"hello"}});
     th.queue()->send({Message::TASK_Data{}});
     th.queue()->send({Message::EXIT_Data{}});
     th.join();
@@ -255,7 +269,10 @@ TEST(SignalingQueue, HandlerThread) {
     ASSERT_EQ(7, th.afters());
 
     ASSERT_EQ(3, th.tasks());
-    ASSERT_EQ(2, th.nops());
+    ASSERT_EQ(1, th.nops());
     ASSERT_EQ(1, th.dumps());
+    ASSERT_EQ(1, th.renames());
     ASSERT_EQ(1, th.exits());
+
+    ASSERT_STREQ("hello", th.name(0));
 }

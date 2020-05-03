@@ -32,6 +32,7 @@ class Message {
             EXIT,
             TASK,
             DUMP,
+            RENAME,
         };
 
         struct NOP_Data {
@@ -46,11 +47,16 @@ class Message {
         struct DUMP_Data {
             bool operator == (const DUMP_Data& rhs) const { return true; }
         };
+        struct RENAME_Data {
+            std::string name;
+            bool operator == (const RENAME_Data& rhs) const { return name == rhs.name; }
+        };
 
         Message(NOP_Data);
         Message(EXIT_Data);
         Message(TASK_Data);
         Message(DUMP_Data);
+        Message(RENAME_Data);
 
         Kind kind() const;
 
@@ -58,6 +64,7 @@ class Message {
         std::optional<EXIT_Data> exit() const;
         std::optional<TASK_Data> task() const;
         std::optional<DUMP_Data> dump() const;
+        std::optional<RENAME_Data> rename() const;
 
         bool operator==(const Message& rhs) const;
         bool operator!=(const Message& rhs) const;
@@ -76,6 +83,7 @@ class Message {
                 virtual Result onExit(const Message::EXIT_Data&);
                 virtual Result onTask(const Message::TASK_Data&);
                 virtual Result onDump(const Message::DUMP_Data&);
+                virtual Result onRename(const Message::RENAME_Data&);
 
                 Handler();
                 virtual ~Handler();
@@ -84,6 +92,6 @@ class Message {
     private:
 
         Kind mKind;
-        std::variant<NOP_Data, EXIT_Data, TASK_Data, DUMP_Data> mPayload;
+        std::variant<NOP_Data, EXIT_Data, TASK_Data, DUMP_Data, RENAME_Data> mPayload;
 };
 }
